@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Happy Birthday!</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Georgia', serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: #3D182D;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stars-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .star {
+            position: absolute;
+            opacity: 0.7;
+        }
+
+        .star svg {
+            display: block;
+            color: #FF8A8A;
+        }
+
+        @keyframes subtleRotate1 {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(15deg); }
+        }
+
+        @keyframes subtleRotate2 {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(-12deg); }
+        }
+
+        @keyframes subtleRotate3 {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(10deg); }
+        }
+
+        @keyframes subtleRotate4 {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(-15deg); }
+        }
+
+        .star:nth-child(1) { animation: subtleRotate1 7s ease-in-out infinite; }
+        .star:nth-child(2) { animation: subtleRotate2 5s ease-in-out infinite 0.5s; }
+        .star:nth-child(3) { animation: subtleRotate3 9s ease-in-out infinite 1s; }
+        .star:nth-child(4) { animation: subtleRotate4 6s ease-in-out infinite 1.5s; }
+        .star:nth-child(5) { animation: subtleRotate1 8s ease-in-out infinite 2s; }
+        .star:nth-child(6) { animation: subtleRotate2 10s ease-in-out infinite 0.8s; }
+        .star:nth-child(7) { animation: subtleRotate3 6.5s ease-in-out infinite 2.5s; }
+        .star:nth-child(8) { animation: subtleRotate4 7.5s ease-in-out infinite 1.2s; }
+        .star:nth-child(9) { animation: subtleRotate1 5.5s ease-in-out infinite 3s; }
+        .star:nth-child(10) { animation: subtleRotate2 8.5s ease-in-out infinite 0.3s; }
+        .star:nth-child(11) { animation: subtleRotate3 4s ease-in-out infinite 2.2s; }
+        .star:nth-child(12) { animation: subtleRotate4 9.5s ease-in-out infinite 1.8s; }
+
+        .card-container {
+            position: relative;
+            z-index: 1;
+        }
+
+        .button-container {
+            position: relative;
+            z-index: 1;
+        }
+
+        .card-container {
+            perspective: 1000px;
+            width: 100%;
+            max-width: 900px;
+        }
+
+        .card {
+            position: relative;
+            width: 100%;
+            min-height: 500px;
+            transform-style: preserve-3d;
+            transition: transform 0.8s ease;
+        }
+
+        .card.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .card-face {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 10px;
+        }
+
+        .card-front {
+            background: transparent;
+            padding: 0;
+        }
+
+        .card-front img {
+            width: 100%;
+            height: 100%;
+            display: block;
+            border-radius: 10px;
+            object-fit: contain;
+        }
+
+        .button-container {
+            display: flex;
+            justify-content: center;
+            width: 100%;
+            margin-top: 100px;
+        }
+
+        .open-button, .close-button {
+            background: white;
+            color: #555;
+            border: 2px solid #ddd;
+            padding: 12px 30px;
+            font-size: 22px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-family: 'Brush Script MT', cursive;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+            transition: transform 0.2s, box-shadow 0.2s, opacity 0.3s;
+        }
+
+        .open-button:hover, .close-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+        }
+
+        .open-button:active, .close-button:active {
+            transform: translateY(0);
+        }
+
+        .close-button {
+            display: none;
+        }
+
+        .button-container.flipped .open-button {
+            display: none;
+        }
+
+        .button-container.flipped .close-button {
+            display: block;
+        }
+
+        .card-back {
+            background: white;
+            transform: rotateY(180deg);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            padding: 0;
+        }
+
+        .card-back img {
+            width: 100%;
+            height: 100%;
+            display: block;
+            border-radius: 10px;
+            object-fit: contain;
+        }
+
+        @media (max-width: 900px) {
+            .card-container {
+                max-width: 600px;
+            }
+
+            .button-container {
+                margin-top: 50px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="stars-container">
+        <div class="star" style="top: 8%; left: 8%; width: 35px;">
+            <svg viewBox="0 0 498 528" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M491.634 163.734C496.979 162.254 499.911 169.733 494.984 172.28L307.812 269.021C305.023 270.463 304.457 274.208 306.696 276.41L456.916 424.146C460.87 428.035 455.859 434.313 451.19 431.32L273.824 317.595C271.181 315.9 267.654 317.283 266.867 320.322L214.033 524.284C212.643 529.654 204.7 528.453 204.958 522.913L214.763 312.447C214.909 309.311 211.949 306.948 208.923 307.786L5.86974 364.012C0.524555 365.492 -2.40722 358.013 2.51989 355.466L189.691 258.725C192.48 257.283 193.046 253.538 190.808 251.336L40.5881 103.6C36.6337 99.7113 41.6448 93.4328 46.3138 96.4265L223.68 210.151C226.323 211.846 229.85 210.463 230.637 207.424L283.47 3.46159C284.861 -1.90753 292.804 -0.707016 292.546 4.8333L282.74 215.299C282.594 218.435 285.555 220.798 288.581 219.96L491.634 163.734Z" fill="currentColor"/>
+            </svg>
+        </div>
+        <div class="star" style="top: 5%; left: 37%; width: 45px;">
+            <svg viewBox="0 0 498 528" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M491.634 163.734C496.979 162.254 499.911 169.733 494.984 172.28L307.812 269.021C305.023 270.463 304.457 274.208 306.696 276.41L456.916 424.146C460.87 428.035 455.859 434.313 451.19 431.32L273.824 317.595C271.181 315.9 267.654 317.283 266.867 320.322L214.033 524.284C212.643 529.654 204.7 528.453 204.958 522.913L214.763 312.447C214.909 309.311 211.949 306.948 208.923 307.786L5.86974 364.012C0.524555 365.492 -2.40722 358.013 2.51989 355.466L189.691 258.725C192.48 257.283 193.046 253.538 190.808 251.336L40.5881 103.6C36.6337 99.7113 41.6448 93.4328 46.3138 96.4265L223.68 210.151C226.323 211.846 229.85 210.463 230.637 207.424L283.47 3.46159C284.861 -1.90753 292.804 -0.707016 292.546 4.8333L282.74 215.299C282.594 218.435 285.555 220.798 288.581 219.96L491.634 163.734Z" fill="currentColor"/>
+            </svg>
+        </div>
+        <div class="star" style="top: 3%; right: 8%; width: 20px;">
+            <svg viewBox="0 0 498 528" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M491.634 163.734C496.979 162.254 499.911 169.733 494.984 172.28L307.812 269.021C305.023 270.463 304.457 274.208 306.696 276.41L456.916 424.146C460.87 428.035 455.859 434.313 451.19 431.32L273.824 317.595C271.181 315.9 267.654 317.283 266.867 320.322L214.033 524.284C212.643 529.654 204.7 528.453 204.958 522.913L214.763 312.447C214.909 309.311 211.949 306.948 208.923 307.786L5.86974 364.012C0.524555 365.492 -2.40722 358.013 2.51989 355.466L189.691 258.725C192.48 257.283 193.046 253.538 190.808 251.336L40.5881 103.6C36.6337 99.7113 41.6448 93.4328 46.3138 96.4265L223.68 210.151C226.323 211.846 229.85 210.463 230.637 207.424L283.47 3.46159C284.861 -1.90753 292.804 -0.707016 292.546 4.8333L282.74 215.299C282.594 218.435 285.555 220.798 288.581 219.96L491.634 163.734Z" fill="currentColor"/>
+            </svg>
+        </div>
+        <div class="star" style="top: 6%; right: 3%; width: 50px;">
+            <svg viewBox="0 0 498 528" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M491.634 163.734C496.979 162.254 499.911 169.733 494.984 172.28L307.812 269.021C305.023 270.463 304.457 274.208 306.696 276.41L456.916 424.146C460.87 428.035 455.859 434.313 451.19 431.32L273.824 317.595C271.181 315.9 267.654 317.283 266.867 320.322L214.033 524.284C212.643 529.654 204.7 528.453 204.958 522.913L214.763 312.447C214.909 309.311 211.949 306.948 208.923 307.786L5.86974 364.012C0.524555 365.492 -2.40722 358.013 2.51989 355.466L189.691 258.725C192.48 257.283 193.046 253.538 190.808 251.336L40.5881 103.6C36.6337 99.7113 41.6448 93.4328 46.3138 96.4265L223.68 210.151C226.323 211.846 229.85 210.463 230.637 207.424L283.47 3.46159C284.861 -1.90753 292.804 -0.707016 292.546 4.8333L282.74 215.299C282.594 218.435 285.555 220.798 288.581 219.96L491.634 163.734Z" fill="currentColor"/>
+            </svg>
+        </div>
+        <div class="star" style="top: 19%; left: 3%; width: 25px;">
+            <svg viewBox="0 0 498 528" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M491.634 163.734C496.979 162.254 499.911 169.733 494.984 172.28L307.812 269.021C305.023 270.463 304.457 274.208 306.696 276.41L456.916 424.146C460.87 428.035 455.859 434.313 451.19 431.32L273.824 317.595C271.181 315.9 267.654 317.283 266.867 320.322L214.033 524.284C212.643 529.654 204.7 528.453 204.958 522.913L214.763 312.447C214.909 309.311 211.949 306.948 208.923 307.786L5.86974 364.012C0.524555 365.492 -2.40722 358.013 2.51989 355.466L189.691 258.725C192.48 257.283 193.046 253.538 190.808 251.336L40.5881 103.6C36.6337 99.7113 41.6448 93.4328 46.3138 96.4265L223.68 210.151C226.323 211.846 229.85 210.463 230.637 207.424L283.47 3.46159C284.861 -1.90753 292.804 -0.707016 292.546 4.8333L282.74 215.299C282.594 218.435 285.555 220.798 288.581 219.96L491.634 163.734Z" fill="currentColor"/>
+            </svg>
+        </div>
+        <div class="star" style="top: 20%; right: 5%; width: 40px;">
+            <svg viewBox="0 0 498 528" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M491.634 163.734C496.979 162.254 499.911 169.733 494.984 172.28L307.812 269.021C305.023 270.463 304.457 274.208 306.696 276.41L456.916 424.146C460.87 428.035 455.859 434.313 451.19 431.32L273.824 317.595C271.181 315.9 267.654 317.283 266.867 320.322L214.033 524.284C212.643 529.654 204.7 528.453 204.958 522.913L214.763 312.447C214.909 309.311 211.949 306.948 208.923 307.786L5.86974 364.012C0.524555 365.492 -2.40722 358.013 2.51989 355.466L189.691 258.725C192.48 257.283 193.046 253.538 190.808 251.336L40.5881 103.6C36.6337 99.7113 41.6448 93.4328 46.3138 96.4265L223.68 210.151C226.323 211.846 229.85 210.463 230.637 207.424L283.47 3.46159C284.861 -1.90753 292.804 -0.707016 292.546 4.8333L282.74 215.299C282.594 218.435 285.555 220.798 288.581 219.96L491.634 163.734Z" fill="currentColor"/>
+            </svg>
+        </div>
+        <div class="star" style="top: 35%; right: 15%; width: 30px;">
+            <svg viewBox="0 0 498 528" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M491.634 163.734C496.979 162.254 499.911 169.733 494.984 172.28L307.812 269.021C305.023 270.463 304.457 274.208 306.696 276.41L456.916 424.146C460.87 428.035 455.859 434.313 451.19 431.32L273.824 317.595C271.181 315.9 267.654 317.283 266.867 320.322L214.033 524.284C212.643 529.654 204.7 528.453 204.958 522.913L214.763 312.447C214.909 309.311 211.949 306.948 208.923 307.786L5.86974 364.012C0.524555 365.492 -2.40722 358.013 2.51989 355.466L189.691 258.725C192.48 257.283 193.046 253.538 190.808 251.336L40.5881 103.6C36.6337 99.7113 41.6448 93.4328 46.3138 96.4265L223.68 210.151C226.323 211.846 229.85 210.463 230.637 207.424L283.47 3.46159C284.861 -1.90753 292.804 -0.707016 292.546 4.8333L282.74 215.299C282.594 218.435 285.555 220.798 288.581 219.96L491.634 163.734Z" fill="currentColor"/>
+            </svg>
+        </div>
+        <div class="star" style="bottom: 25%; left: 10%; width: 22px;">
+            <svg viewBox="0 0 498 528" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M491.634 163.734C496.979 162.254 499.911 169.733 494.984 172.28L307.812 269.021C305.023 270.463 304.457 274.208 306.696 276.41L456.916 424.146C460.87 428.035 455.859 434.313 451.19 431.32L273.824 317.595C271.181 315.9 267.654 317.283 266.867 320.322L214.033 524.284C212.643 529.654 204.7 528.453 204.958 522.913L214.763 312.447C214.909 309.311 211.949 306.948 208.923 307.786L5.86974 364.012C0.524555 365.492 -2.40722 358.013 2.51989 355.466L189.691 258.725C192.48 257.283 193.046 253.538 190.808 251.336L40.5881 103.6C36.6337 99.7113 41.6448 93.4328 46.3138 96.4265L223.68 210.151C226.323 211.846 229.85 210.463 230.637 207.424L283.47 3.46159C284.861 -1.90753 292.804 -0.707016 292.546 4.8333L282.74 215.299C282.594 218.435 285.555 220.798 288.581 219.96L491.634 163.734Z" fill="currentColor"/>
+            </svg>
+        </div>
+        <div class="star" style="bottom: 20%; right: 8%; width: 28px;">
+            <svg viewBox="0 0 498 528" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M491.634 163.734C496.979 162.254 499.911 169.733 494.984 172.28L307.812 269.021C305.023 270.463 304.457 274.208 306.696 276.41L456.916 424.146C460.87 428.035 455.859 434.313 451.19 431.32L273.824 317.595C271.181 315.9 267.654 317.283 266.867 320.322L214.033 524.284C212.643 529.654 204.7 528.453 204.958 522.913L214.763 312.447C214.909 309.311 211.949 306.948 208.923 307.786L5.86974 364.012C0.524555 365.492 -2.40722 358.013 2.51989 355.466L189.691 258.725C192.48 257.283 193.046 253.538 190.808 251.336L40.5881 103.6C36.6337 99.7113 41.6448 93.4328 46.3138 96.4265L223.68 210.151C226.323 211.846 229.85 210.463 230.637 207.424L283.47 3.46159C284.861 -1.90753 292.804 -0.707016 292.546 4.8333L282.74 215.299C282.594 218.435 285.555 220.798 288.581 219.96L491.634 163.734Z" fill="currentColor"/>
+            </svg>
+        </div>
+        <div class="star" style="bottom: 10%; left: 7%; width: 18px;">
+            <svg viewBox="0 0 498 528" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M491.634 163.734C496.979 162.254 499.911 169.733 494.984 172.28L307.812 269.021C305.023 270.463 304.457 274.208 306.696 276.41L456.916 424.146C460.87 428.035 455.859 434.313 451.19 431.32L273.824 317.595C271.181 315.9 267.654 317.283 266.867 320.322L214.033 524.284C212.643 529.654 204.7 528.453 204.958 522.913L214.763 312.447C214.909 309.311 211.949 306.948 208.923 307.786L5.86974 364.012C0.524555 365.492 -2.40722 358.013 2.51989 355.466L189.691 258.725C192.48 257.283 193.046 253.538 190.808 251.336L40.5881 103.6C36.6337 99.7113 41.6448 93.4328 46.3138 96.4265L223.68 210.151C226.323 211.846 229.85 210.463 230.637 207.424L283.47 3.46159C284.861 -1.90753 292.804 -0.707016 292.546 4.8333L282.74 215.299C282.594 218.435 285.555 220.798 288.581 219.96L491.634 163.734Z" fill="currentColor"/>
+            </svg>
+        </div>
+        <div class="star" style="bottom: 8%; right: 4%; width: 48px;">
+            <svg viewBox="0 0 498 528" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M491.634 163.734C496.979 162.254 499.911 169.733 494.984 172.28L307.812 269.021C305.023 270.463 304.457 274.208 306.696 276.41L456.916 424.146C460.87 428.035 455.859 434.313 451.19 431.32L273.824 317.595C271.181 315.9 267.654 317.283 266.867 320.322L214.033 524.284C212.643 529.654 204.7 528.453 204.958 522.913L214.763 312.447C214.909 309.311 211.949 306.948 208.923 307.786L5.86974 364.012C0.524555 365.492 -2.40722 358.013 2.51989 355.466L189.691 258.725C192.48 257.283 193.046 253.538 190.808 251.336L40.5881 103.6C36.6337 99.7113 41.6448 93.4328 46.3138 96.4265L223.68 210.151C226.323 211.846 229.85 210.463 230.637 207.424L283.47 3.46159C284.861 -1.90753 292.804 -0.707016 292.546 4.8333L282.74 215.299C282.594 218.435 285.555 220.798 288.581 219.96L491.634 163.734Z" fill="currentColor"/>
+            </svg>
+        </div>
+        <div class="star" style="bottom: 5%; right: 20%; width: 24px;">
+            <svg viewBox="0 0 498 528" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M491.634 163.734C496.979 162.254 499.911 169.733 494.984 172.28L307.812 269.021C305.023 270.463 304.457 274.208 306.696 276.41L456.916 424.146C460.87 428.035 455.859 434.313 451.19 431.32L273.824 317.595C271.181 315.9 267.654 317.283 266.867 320.322L214.033 524.284C212.643 529.654 204.7 528.453 204.958 522.913L214.763 312.447C214.909 309.311 211.949 306.948 208.923 307.786L5.86974 364.012C0.524555 365.492 -2.40722 358.013 2.51989 355.466L189.691 258.725C192.48 257.283 193.046 253.538 190.808 251.336L40.5881 103.6C36.6337 99.7113 41.6448 93.4328 46.3138 96.4265L223.68 210.151C226.323 211.846 229.85 210.463 230.637 207.424L283.47 3.46159C284.861 -1.90753 292.804 -0.707016 292.546 4.8333L282.74 215.299C282.594 218.435 285.555 220.798 288.581 219.96L491.634 163.734Z" fill="currentColor"/>
+            </svg>
+        </div>
+    </div>
+
+    <div class="card-container">
+        <div class="card" id="card">
+            <div class="card-face card-front">
+                <img src="../Hoc/New folder (2)/Happy Birthday.png" alt="Birthday Cats">
+            </div>
+            <div class="card-face card-back">
+                <img src="../Hoc/New folder (2)/back 02.png" alt="Birthday Signatures">
+            </div>
+        </div>
+    </div>
+    <div class="button-container">
+        <button class="open-button" onclick="openCard()">open here!</button>
+        <button class="close-button" onclick="closeCard()">back</button>
+    </div>
+
+    <script>
+        // Set card height based on image dimensions
+        const img = document.querySelector('.card-front img');
+        const card = document.getElementById('card');
+
+        function setCardHeight() {
+            const height = img.offsetHeight;
+            card.style.height = height + 'px';
+        }
+
+        img.addEventListener('load', setCardHeight);
+        window.addEventListener('resize', setCardHeight);
+
+        // If image is already loaded
+        if (img.complete) {
+            setCardHeight();
+        }
+
+        function openCard() {
+            document.getElementById('card').classList.add('flipped');
+            document.querySelector('.button-container').classList.add('flipped');
+        }
+
+        function closeCard() {
+            document.getElementById('card').classList.remove('flipped');
+            document.querySelector('.button-container').classList.remove('flipped');
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+# Vercel
+.vercel
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Backup files
+*.bak
+*~
+
+# Old folders (not needed for deployment)
+birthday-card-package/
+Connect dots/
+*.zip
