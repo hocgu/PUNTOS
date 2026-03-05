@@ -734,7 +734,7 @@
             svg.innerHTML = '';
             lines = [];
 
-            // Add cat detail image (only for medium/cat level)
+            // Add cat detail image (only for medium/cat level) - insert FIRST so dots are clickable
             if (level === 'medium') {
                 const catImage = document.createElementNS('http://www.w3.org/2000/svg', 'image');
                 catImage.setAttribute('href', './assets/cat-outline.svg?v=3');
@@ -743,7 +743,8 @@
                 catImage.setAttribute('width', '2374');
                 catImage.setAttribute('height', '2157');
                 catImage.setAttribute('preserveAspectRatio', 'xMidYMid meet');
-                svg.appendChild(catImage);
+                catImage.style.pointerEvents = 'none'; // Make image non-interactive
+                svg.insertBefore(catImage, svg.firstChild); // Insert at beginning so dots are on top
             }
 
             // Colors from the animation
