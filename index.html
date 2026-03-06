@@ -3,1377 +3,1479 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Connect the Dots Game</title>
+    <title>Letter Grid Editor</title>
     <style>
-        @font-face {
-            font-family: 'Gill Sans Ultra Bold';
-            src: local('Gill Sans Ultra Bold'), local('GillSans-UltraBold');
-            font-weight: 800;
-            font-style: normal;
-        }
-
-        @font-face {
-            font-family: 'DM Sans';
-            src: local('DM Sans Medium'),
-                 local('DMSans-Medium'),
-                 local('DM Sans');
-            font-weight: 500;
-            font-style: normal;
-        }
-
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            user-select: none;
         }
 
         body {
-            font-family: 'Gill Sans MT', 'Gill Sans', sans-serif;
-            background: #F3EEE6;
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            color: #2c3e50;
-            margin: 0;
-            padding: 0;
-        }
-
-        #menu-screen {
-            text-align: center;
-            padding: 40px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+            background: #f5f5f0;
+            overflow: hidden;
             width: 100vw;
             height: 100vh;
+        }
+
+        .grid-container {
+            position: absolute;
+            background: white;
+            border: 1px solid #333;
+            padding: 20px;
+            cursor: move;
+            transition: border-color 0.15s steps(3), border-width 0.15s steps(3), box-shadow 0.15s steps(3);
+        }
+
+        .grid-container.active {
+            border-color: #4a90e2;
+            border-width: 2px;
+            box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.2);
+            z-index: 100 !important;
+        }
+
+        .grid-container.resizing {
+            cursor: default;
+        }
+
+        .grid {
+            display: grid;
+            gap: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .cell {
+            border: 1px solid #ff6666;
+            background: transparent;
+            cursor: default;
+            transition: border-color 0.1s steps(2);
             position: relative;
             overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
         }
 
-        #background-canvas {
-            position: fixed;
+        .cell.no-lines {
+            border-color: transparent;
+        }
+
+        .grid {
+            background: transparent;
+        }
+
+        .cell svg {
+            position: absolute;
             top: 0;
             left: 0;
-            width: 100vw;
-            height: 100vh;
-            z-index: -1;
-            pointer-events: none;
+            width: 100%;
+            height: 100%;
         }
 
-        #menu-screen h1,
-        #menu-screen .subtitle,
-        #menu-screen .difficulty-buttons {
-            position: relative;
-            z-index: 10;
+        .controls {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: white;
+            border: 1px solid black;
+            padding: 0;
+            width: 238px;
+            z-index: 999;
+            user-select: text;
         }
 
-        h1 {
-            font-family: 'Gill Sans Ultra Bold', 'Gill Sans', sans-serif;
-            font-size: 260px;
-            font-weight: 800;
-            margin-bottom: 20px;
-            color: #2D461F;
-            letter-spacing: -2px;
-            text-transform: lowercase;
-        }
-
-        .subtitle {
-            font-size: 32px;
-            margin-bottom: 80px;
-            color: #959D52;
-            font-family: 'DM Sans', sans-serif;
-            font-weight: 500;
-            letter-spacing: -1px;
-            text-transform: lowercase;
-            display: none;
-        }
-
-        .difficulty-buttons {
+        .controls-header {
             display: flex;
-            flex-direction: row;
-            gap: 15px;
-            justify-content: center;
             align-items: center;
-            margin: 0 auto;
+            gap: 8px;
+            padding: 12px 16px;
+            border-bottom: 1px solid black;
         }
 
-        .difficulty-btn {
-            padding: 20px 50px;
-            font-size: 32px;
-            font-family: 'DM Sans', sans-serif;
-            font-weight: 500;
-            background: transparent;
-            color: #959D52;
-            border: 2px solid transparent;
+        .grid-logo {
+            width: 18px;
+            height: 18px;
+            background: black;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 1px;
+            padding: 1px;
+        }
+
+        .grid-logo-cell {
+            background: white;
+        }
+
+        .controls h2 {
+            font-size: 14px;
+            margin: 0;
+            font-weight: 600;
+        }
+
+        .controls-content {
+            padding: 16px;
+            overflow: hidden;
+            transition: max-height 0.25s steps(3), opacity 0.25s steps(3);
+        }
+
+        .controls.collapsed .controls-content {
+            max-height: 0 !important;
+            opacity: 0;
+            padding-top: 0;
+            padding-bottom: 0;
+        }
+
+        .control-group {
+            margin-bottom: 16px;
+        }
+
+        .control-label {
+            font-size: 11px;
+            color: #666;
+            margin-bottom: 6px;
+            display: block;
+        }
+
+        .text-input {
+            width: 100%;
+            padding: 6px 8px;
+            border: 1px solid #ddd;
+            font-size: 13px;
+            font-family: inherit;
+        }
+
+        .shape-buttons {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+            margin-bottom: 12px;
+        }
+
+        .shape-btn {
+            aspect-ratio: 1;
+            border: 1px solid #ddd;
+            background: white;
             cursor: pointer;
-            transition: border 0.3s ease;
-            position: relative;
-            text-transform: lowercase;
-            letter-spacing: -1px;
-        }
-
-        .difficulty-btn:hover {
-            border: 2px solid #959D52;
-        }
-
-        .difficulty-btn.selected {
-            background: #959D52;
-            color: #F1E9DA;
-            border: 2px solid #959D52;
-        }
-
-        .level-icon {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 195px;
-            height: 195px;
-            opacity: 0;
-            transition: opacity 0.3s ease 0.1s, transform 0.1s ease;
-            pointer-events: none;
-            display: none;
-        }
-
-        .difficulty-btn:hover .level-icon {
-            opacity: 0;
-            display: none;
-        }
-
-        .easy-btn {
-            /* No special styling needed */
-        }
-
-        .medium-btn {
-            /* No special styling needed */
-        }
-
-        .hard-btn {
-            /* No special styling needed */
-        }
-
-        .difficulty-info {
-            display: none;
-        }
-
-        #game-screen {
-            display: none;
-            position: relative;
-            width: 100vw;
-            height: 100vh;
-            padding: 0;
-            justify-content: center;
+            display: flex;
             align-items: center;
+            justify-content: center;
+            padding: 8px;
+            transition: border-color 0.1s steps(2);
         }
 
-        #game-header {
-            position: absolute;
-            top: 45px;
-            left: 55px;
-            text-align: left;
+        .shape-btn:hover {
+            border-color: #999;
         }
 
-        #game-header h2 {
-            font-family: 'Gill Sans Ultra Bold', 'Gill Sans', sans-serif;
-            font-size: 96px;
-            font-weight: 800;
-            margin: 0;
-            margin-bottom: 10px;
-            color: #2D461F;
-            line-height: 1;
-            white-space: nowrap;
-            letter-spacing: -2px;
-            text-transform: lowercase;
+        .shape-btn.active {
+            border-color: black;
+            border-width: 1px;
         }
 
-        #progress {
-            position: relative;
-            font-family: 'DM Sans', sans-serif;
-            font-size: 32px;
-            font-weight: 500;
-            background: transparent;
-            color: #959D52;
-            padding: 0;
-            padding-left: 30px;
-            margin: 0;
-            border-radius: 0;
-            text-align: left;
-            white-space: nowrap;
-            letter-spacing: -1px;
-            text-transform: lowercase;
+        .shape-visual {
+            width: 100%;
+            height: 100%;
         }
 
-        #progress::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 17px;
-            height: 17px;
-            background-color: #2D461F;
+        .shape-visual.square {
+            background: #FF88DD;
+        }
+
+        .shape-visual.circle {
+            background: #FF6633;
             border-radius: 50%;
         }
 
-        #game-canvas {
+        .shape-visual.triangle {
+            width: 0;
+            height: 0;
             background: transparent;
-            cursor: crosshair;
-            width: 85vw;
-            height: 70vh;
-            max-width: 1000px;
-            max-height: 600px;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
+            border-left: 20px solid transparent;
+            border-right: 20px solid transparent;
+            border-bottom: 35px solid #B7EA50;
         }
 
-        #back-btn {
-            position: fixed;
-            top: 80px;
-            right: 55px;
+        .slider-row {
+            margin-bottom: 12px;
+        }
+
+        .slider-label {
+            font-size: 11px;
+            color: #666;
+            margin-bottom: 4px;
+            display: block;
+        }
+
+        .slider-wrapper {
+            position: relative;
+            width: 100%;
+            height: 23px;
+            display: flex;
+            align-items: center;
+            background-image: url('data:image/svg+xml;utf8,<svg width="245" height="23" viewBox="0 0 245 23" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7 11.25H239.5" stroke="black"/><path d="M0 11.25H3.25C9.4632 11.25 14.5 6.2132 14.5 0" stroke="black"/><path d="M0 11.25H3.25C9.4632 11.25 14.5 16.2868 14.5 22.5" stroke="black"/><path d="M244.375 11.25L241.125 11.25C234.912 11.25 229.875 16.2868 229.875 22.5" stroke="black"/><path d="M244.375 11.25L241.125 11.25C234.912 11.25 229.875 6.2132 229.875 -1.26763e-06" stroke="black"/></svg>');
+            background-size: 100% 100%;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+
+        input[type="range"] {
+            position: relative;
+            width: 100%;
+            height: 23px;
+            -webkit-appearance: none;
+            background: transparent;
+            z-index: 1;
             margin: 0;
-            padding: 12px 30px;
-            font-size: 32px;
-            font-family: 'DM Sans', sans-serif;
-            font-weight: 500;
-            background: transparent;
-            color: #959D52;
-            border: 2px solid transparent;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px;
+            height: 14px;
+            background: black;
+            border-radius: 50%;
             cursor: pointer;
-            transition: border 0.3s ease;
-            text-transform: lowercase;
-            letter-spacing: -1px;
         }
 
-        #back-btn:hover {
-            border: 2px solid #959D52;
-        }
-
-        #back-btn:hover {
-            border: 2px solid #8B7355;
-        }
-
-        #completion-message {
-            display: none;
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: #ffffff;
-            color: #4caf50;
-            padding: 40px 60px;
-            border-radius: 20px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-            border: 3px solid #4caf50;
-            text-align: center;
-            font-size: 2em;
-            font-weight: bold;
-            animation: popIn 0.5s ease;
-        }
-
-        @keyframes popIn {
-            0% {
-                transform: translate(-50%, -50%) scale(0);
-            }
-            100% {
-                transform: translate(-50%, -50%) scale(1);
-            }
-        }
-
-        .dot {
-            stroke: white;
-            stroke-width: 2;
+        input[type="range"]::-moz-range-thumb {
+            width: 14px;
+            height: 14px;
+            background: black;
+            border-radius: 50%;
             cursor: pointer;
-            transition: all 0.2s ease;
+            border: none;
         }
 
-        .dot:hover {
-            r: 8;
+        .button-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 16px;
         }
 
-        .dot.connected {
-            /* Removed brightness filter to keep dots vibrant */
+        .action-btn {
+            padding: 8px;
+            border: 1px solid black;
+            background: white;
+            font-size: 11px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.1s steps(2);
         }
 
-        .dot-number {
-            font-family: 'Gill Sans MT', 'Gill Sans', sans-serif;
-            font-weight: bold;
-            fill: #2c3e50;
-            pointer-events: none;
-            user-select: none;
+        .action-btn:hover {
+            background: #f5f5f5;
+        }
+
+        .info-section {
+            padding-top: 12px;
+            border-top: 1px solid black;
+            font-size: 10px;
+            line-height: 1.5;
+            color: #666;
+        }
+
+        .info-section strong {
+            display: block;
+            margin-bottom: 6px;
+            color: black;
             font-size: 11px;
         }
 
-        .line {
-            stroke-width: 3;
-            stroke-linecap: round;
-            fill: none;
+        .menu-resize-handle {
+            position: absolute;
+            bottom: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 50px;
+            height: 10px;
+            background: black;
+            border-radius: 5px;
+            cursor: pointer;
+            z-index: 10;
+            transition: background 0.1s steps(2);
         }
 
-        .illustration-line {
-            stroke: #2c3e50;
-            stroke-width: 2;
-            stroke-linecap: round;
-            fill: none;
-            opacity: 0;
-            transition: opacity 1s ease;
+        .menu-resize-handle:hover {
+            background: #555;
         }
 
-        .illustration-line.revealed {
-            opacity: 1;
+
+        .icon-btn {
+            position: fixed;
+            right: 20px;
+            cursor: pointer;
+            z-index: 1000;
+            transition: transform 0.1s steps(2);
+            width: 50px;
+            height: 50px;
+            background: transparent;
+            border: none;
+            padding: 0;
         }
+
+        .icon-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .icon-btn:active {
+            transform: scale(0.95);
+        }
+
+        .add-btn {
+            top: 20px;
+        }
+
+        .audio-btn {
+            top: 80px;
+        }
+
+        .download-btn {
+            top: 140px;
+        }
+
+        .icon-btn svg {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .audio-btn:not(.active) svg circle:first-child {
+            fill: #ddd;
+        }
+
+        .reset-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: transparent;
+            border: none;
+            padding: 0;
+            cursor: pointer;
+            z-index: 1000;
+            transition: transform 0.1s steps(2);
+            width: 120px;
+            height: auto;
+        }
+
+        .reset-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .reset-btn:active {
+            transform: scale(0.98);
+        }
+
+        .reset-btn svg {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .resize-handle.hidden {
+            display: none;
+        }
+
+        .resize-handle {
+            position: absolute;
+            background: #333;
+            z-index: 100;
+            cursor: pointer;
+            transition: background 0.1s steps(2);
+        }
+
+        .grid-container.active .resize-handle {
+            background: #4a90e2;
+        }
+
+        .handle-tl, .handle-tr, .handle-bl, .handle-br {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+        }
+
+        .handle-tl { top: -7px; left: -7px; cursor: nwse-resize !important; }
+        .handle-tr { top: -7px; right: -7px; cursor: nesw-resize !important; }
+        .handle-bl { bottom: -7px; left: -7px; cursor: nesw-resize !important; }
+        .handle-br { bottom: -7px; right: -7px; cursor: nwse-resize !important; }
+
+        .handle-t, .handle-b {
+            width: 50px;
+            height: 10px;
+            border-radius: 5px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .handle-l, .handle-r {
+            width: 10px;
+            height: 50px;
+            border-radius: 5px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .handle-t { top: -5px; cursor: ns-resize !important; }
+        .handle-b { bottom: -5px; cursor: ns-resize !important; }
+        .handle-l { left: -5px; cursor: ew-resize !important; }
+        .handle-r { right: -5px; cursor: ew-resize !important; }
     </style>
 </head>
 <body>
-    <!-- Menu Screen -->
-    <div id="menu-screen">
-        <canvas id="background-canvas"></canvas>
-        <h1>PUNTOS</h1>
-        <p class="subtitle">choose your level!</p>
-        <div class="difficulty-buttons">
-            <button class="difficulty-btn medium-btn" onclick="startGame('medium')">
-                <span>start</span>
-            </button>
+    <div class="controls">
+        <div class="controls-header">
+            <div class="grid-logo">
+                <div class="grid-logo-cell"></div>
+                <div class="grid-logo-cell"></div>
+                <div class="grid-logo-cell"></div>
+                <div class="grid-logo-cell"></div>
+                <div class="grid-logo-cell"></div>
+                <div class="grid-logo-cell"></div>
+                <div class="grid-logo-cell"></div>
+                <div class="grid-logo-cell"></div>
+                <div class="grid-logo-cell"></div>
+            </div>
+            <h2>Letter Grid</h2>
         </div>
+
+        <div class="controls-content">
+            <div class="control-group">
+                <label class="control-label">Type your letter</label>
+                <input type="text" class="text-input" id="letterInput" maxlength="1" value="A">
+            </div>
+
+            <div class="control-group">
+                <label class="control-label">Cell shape</label>
+                <div class="shape-buttons">
+                    <button class="shape-btn active" data-shape="square">
+                        <div class="shape-visual square"></div>
+                    </button>
+                    <button class="shape-btn" data-shape="circle">
+                        <div class="shape-visual circle"></div>
+                    </button>
+                    <button class="shape-btn" data-shape="triangle">
+                        <div class="shape-visual triangle"></div>
+                    </button>
+                </div>
+                <div class="slider-row">
+                    <label class="slider-label">Shape size</label>
+                    <div class="slider-wrapper">
+                        <input type="range" id="shapeSizeSlider" min="50" max="100" value="100">
+                    </div>
+                </div>
+            </div>
+
+            <div class="slider-row">
+                <label class="slider-label">Grid columns</label>
+                <div class="slider-wrapper">
+                    <input type="range" id="colsSlider" min="3" max="25" value="5">
+                </div>
+            </div>
+
+            <div class="slider-row">
+                <label class="slider-label">Grid rows</label>
+                <div class="slider-wrapper">
+                    <input type="range" id="rowsSlider" min="3" max="25" value="6">
+                </div>
+            </div>
+
+            <div class="slider-row">
+                <label class="slider-label">Cell size</label>
+                <div class="slider-wrapper">
+                    <input type="range" id="cellSizeSlider" min="20" max="80" value="50">
+                </div>
+            </div>
+
+            <div class="button-row">
+                <button class="action-btn" id="toggleGridBtn">Hide grid lines</button>
+                <button class="action-btn" id="hideBoxBtn">Hide box</button>
+            </div>
+
+            <div class="info-section">
+                <strong>How it works?</strong>
+                Click grid to select it<br>
+                Controls affect selected grid<br>
+                Click + to add a new grid<br>
+                Reset button resets selected grid
+            </div>
+        </div>
+
+        <div class="menu-resize-handle" id="menuResizeHandle"></div>
     </div>
 
-    <!-- Game Screen -->
-    <div id="game-screen">
-        <div id="game-header">
-            <h2 id="level-title">Connect the Dots</h2>
-            <div id="progress">Connect: <span id="current-number">1</span> / <span id="total-dots">0</span></div>
-        </div>
-        <svg id="game-canvas" width="1400" height="900" viewBox="200 100 1200 1000" preserveAspectRatio="xMidYMid meet"></svg>
-        <button id="back-btn" onclick="backToMenu()">back to menu</button>
-    </div>
+    <button class="icon-btn add-btn" id="addBtn">
+        <svg viewBox="0 0 75 75" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="37.5" cy="37.5" r="37" fill="white" stroke="black"/>
+            <path d="M37.5 18V57" stroke="black"/>
+            <path d="M57 37.5L18 37.5" stroke="black"/>
+        </svg>
+    </button>
 
-    <!-- Completion Message -->
-    <div id="completion-message">
-        🎉 Amazing! You did it! 🎉
-    </div>
+    <button class="icon-btn audio-btn active" id="audioBtn">
+        <svg viewBox="0 0 75 75" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="37.5" cy="37.5" r="37" fill="white" stroke="black"/>
+            <circle cx="23.4165" cy="50.9598" r="6.46342" stroke="black"/>
+            <circle cx="45.521" cy="42.9786" r="6.46342" stroke="black"/>
+            <path d="M29.8623 50.799V26.5877L52.0061 20.6543V43.0856" stroke="black"/>
+            <path d="M29.8623 26.6105V20.8605L52.0059 14.8425V22.6106" stroke="black"/>
+        </svg>
+    </button>
+
+    <button class="icon-btn download-btn" id="downloadBtn">
+        <svg viewBox="0 0 75 75" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="37.5" cy="37.5" r="37" fill="white" stroke="black"/>
+            <path d="M37.5 15.7656L37.5 54.3594" stroke="black"/>
+            <path d="M37.5 59.2344L37.5 55.9844C37.5 49.7712 32.4632 44.7344 26.25 44.7344" stroke="black"/>
+            <path d="M37.5 59.2344L37.5 55.9844C37.5 49.7712 42.5368 44.7344 48.75 44.7344" stroke="black"/>
+        </svg>
+    </button>
+
+    <button class="reset-btn" id="resetBtn">
+        <svg viewBox="0 0 177 59" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M56.2594 18.0308L54.9191 18.2724C52.3568 18.7342 50.6541 21.1858 51.116 23.7481" stroke="black"/>
+            <path d="M56.2592 18.0308L54.9189 18.2724C52.3566 18.7343 49.9051 17.0316 49.4432 14.4693" stroke="black"/>
+            <path d="M88.968 37.3914L85.08 30.4314H82.536V37.3914H80.16V20.3754H86.568C88.136 20.3754 89.392 20.8634 90.336 21.8394C91.296 22.7994 91.776 23.9994 91.776 25.4394C91.776 26.6714 91.408 27.7274 90.672 28.6074C89.936 29.4714 88.928 30.0234 87.648 30.2634L91.704 37.3914H88.968ZM82.536 28.3194H86.136C87.096 28.3194 87.872 28.0634 88.464 27.5514C89.056 27.0234 89.352 26.3194 89.352 25.4394C89.352 24.5434 89.056 23.8314 88.464 23.3034C87.872 22.7594 87.096 22.4874 86.136 22.4874H82.536V28.3194ZM95.5346 30.4314H101.847C101.815 29.5674 101.527 28.8634 100.983 28.3194C100.439 27.7594 99.6706 27.4794 98.6786 27.4794C97.7826 27.4794 97.0466 27.7754 96.4706 28.3674C95.8946 28.9434 95.5826 29.6314 95.5346 30.4314ZM102.183 33.4314L104.127 34.1034C103.791 35.1754 103.167 36.0554 102.255 36.7434C101.343 37.4154 100.239 37.7514 98.9426 37.7514C97.3266 37.7514 95.9506 37.1994 94.8146 36.0954C93.6946 34.9754 93.1346 33.4714 93.1346 31.5834C93.1346 29.8234 93.6786 28.3674 94.7666 27.2154C95.8546 26.0634 97.1506 25.4874 98.6546 25.4874C100.399 25.4874 101.759 26.0394 102.735 27.1434C103.711 28.2314 104.199 29.6954 104.199 31.5354C104.199 31.8234 104.183 32.0634 104.151 32.2554H95.4626C95.4786 33.2794 95.8146 34.1194 96.4706 34.7754C97.1426 35.4314 97.9666 35.7594 98.9426 35.7594C100.591 35.7594 101.671 34.9834 102.183 33.4314ZM105.758 34.3914L107.798 33.6714C107.878 34.2954 108.15 34.8154 108.614 35.2314C109.078 35.6314 109.702 35.8314 110.486 35.8314C111.094 35.8314 111.574 35.6874 111.926 35.3994C112.278 35.0954 112.454 34.7274 112.454 34.2954C112.454 33.5274 111.958 33.0314 110.966 32.8074L108.998 32.3754C108.102 32.1834 107.398 31.7994 106.886 31.2234C106.374 30.6474 106.118 29.9514 106.118 29.1354C106.118 28.1434 106.518 27.2874 107.318 26.5674C108.134 25.8474 109.102 25.4874 110.222 25.4874C110.958 25.4874 111.614 25.5994 112.19 25.8234C112.766 26.0314 113.214 26.3114 113.534 26.6634C113.854 27.0154 114.094 27.3434 114.254 27.6474C114.414 27.9514 114.534 28.2634 114.614 28.5834L112.622 29.3274C112.59 29.1354 112.534 28.9514 112.454 28.7754C112.374 28.5834 112.246 28.3754 112.07 28.1514C111.91 27.9274 111.67 27.7514 111.35 27.6234C111.03 27.4794 110.654 27.4074 110.222 27.4074C109.662 27.4074 109.198 27.5594 108.83 27.8634C108.478 28.1674 108.302 28.5274 108.302 28.9434C108.302 29.6794 108.742 30.1434 109.622 30.3354L111.494 30.7434C112.518 30.9674 113.302 31.3834 113.846 31.9914C114.406 32.5834 114.686 33.3114 114.686 34.1754C114.686 35.0874 114.31 35.9114 113.558 36.6474C112.822 37.3834 111.79 37.7514 110.462 37.7514C109.038 37.7514 107.926 37.3994 107.126 36.6954C106.326 35.9754 105.87 35.2074 105.758 34.3914ZM118.797 30.4314H125.109C125.077 29.5674 124.789 28.8634 124.245 28.3194C123.701 27.7594 122.933 27.4794 121.941 27.4794C121.045 27.4794 120.309 27.7754 119.733 28.3674C119.157 28.9434 118.845 29.6314 118.797 30.4314ZM125.445 33.4314L127.389 34.1034C127.053 35.1754 126.429 36.0554 125.517 36.7434C124.605 37.4154 123.501 37.7514 122.205 37.7514C120.589 37.7514 119.213 37.1994 118.077 36.0954C116.957 34.9754 116.397 33.4714 116.397 31.5834C116.397 29.8234 116.941 28.3674 118.029 27.2154C119.117 26.0634 120.413 25.4874 121.917 25.4874C123.661 25.4874 125.021 26.0394 125.997 27.1434C126.973 28.2314 127.461 29.6954 127.461 31.5354C127.461 31.8234 127.445 32.0634 127.413 32.2554H118.725C118.741 33.2794 119.077 34.1194 119.733 34.7754C120.405 35.4314 121.229 35.7594 122.205 35.7594C123.853 35.7594 124.933 34.9834 125.445 33.4314ZM133.125 22.1994V25.8474H135.621V27.8874H133.125V33.8874C133.125 34.4314 133.245 34.8314 133.485 35.0874C133.741 35.3434 134.157 35.4714 134.733 35.4714C135.069 35.4714 135.365 35.4394 135.621 35.3754V37.2954C135.237 37.4394 134.725 37.5114 134.085 37.5114C133.093 37.5114 132.309 37.2234 131.733 36.6474C131.157 36.0714 130.869 35.2634 130.869 34.2234V27.8874H128.661V25.8474H129.285C129.877 25.8474 130.317 25.6874 130.605 25.3674C130.909 25.0314 131.061 24.5994 131.061 24.0714V22.1994H133.125Z" fill="black"/>
+            <path d="M66.539 31.8391C66.539 35.5574 65.0097 38.9185 62.5457 41.3277C60.1533 43.6668 56.8798 45.1086 53.2695 45.1086C45.941 45.1086 40 39.1676 40 31.8391C40 24.5105 45.941 18.5696 53.2695 18.5696" stroke="black"/>
+            <rect x="0.5" y="0.5" width="176" height="57.5" stroke="black"/>
+        </svg>
+    </button>
 
     <script>
-        let currentDot = 1;
-        let totalDots = 0;
-        let dots = [];
-        let lines = [];
-        let difficulty = '';
-        let isDrawing = false;
-        let currentLine = null;
-        let lastConnectedDot = null;
-        let trailPoints = [];
-        let audioContext = null;
-
-        // Level data with dot coordinates
-        const levels = {
-            easy: {
-                title: "easy",
-                dots: []
-            },
-            medium: {
-                title: "intermediate: cat",
-                dots: [
-                    {x: 624, y: 206},
-                    {x: 674, y: 182},
-                    {x: 700, y: 232},
-                    {x: 674, y: 286},
-                    {x: 640, y: 338},
-                    {x: 598, y: 380},
-                    {x: 548, y: 418},
-                    {x: 494, y: 448},
-                    {x: 446, y: 484},
-                    {x: 434, y: 540},
-                    {x: 466, y: 592},
-                    {x: 488, y: 546},
-                    {x: 526, y: 498},
-                    {x: 574, y: 462},
-                    {x: 630, y: 436},
-                    {x: 688, y: 418},
-                    {x: 748, y: 408},
-                    {x: 810, y: 406},
-                    {x: 870, y: 410},
-                    {x: 930, y: 422},
-                    {x: 988, y: 442},
-                    {x: 1036, y: 458},
-                    {x: 1048, y: 400},
-                    {x: 1050, y: 348},
-                    {x: 1058, y: 290},
-                    {x: 1100, y: 328},
-                    {x: 1150, y: 336},
-                    {x: 1204, y: 342},
-                    {x: 1240, y: 294},
-                    {x: 1266, y: 332},
-                    {x: 1244, y: 386},
-                    {x: 1264, y: 442},
-                    {x: 1254, y: 502},
-                    {x: 1214, y: 548},
-                    {x: 1172, y: 588},
-                    {x: 1140, y: 640},
-                    {x: 1110, y: 694},
-                    {x: 1126, y: 748},
-                    {x: 1152, y: 804},
-                    {x: 1180, y: 858},
-                    {x: 1206, y: 914},
-                    {x: 1232, y: 968},
-                    {x: 1252, y: 1020},
-                    {x: 1192, y: 1020},
-                    {x: 1134, y: 1012},
-                    {x: 1108, y: 958},
-                    {x: 1082, y: 902},
-                    {x: 1054, y: 848},
-                    {x: 1028, y: 802},
-                    {x: 1000, y: 856},
-                    {x: 974, y: 912},
-                    {x: 948, y: 966},
-                    {x: 920, y: 1020},
-                    {x: 858, y: 1020},
-                    {x: 806, y: 1014},
-                    {x: 832, y: 960},
-                    {x: 858, y: 904},
-                    {x: 886, y: 850},
-                    {x: 890, y: 810},
-                    {x: 830, y: 816},
-                    {x: 768, y: 816},
-                    {x: 708, y: 810},
-                    {x: 702, y: 838},
-                    {x: 728, y: 894},
-                    {x: 754, y: 948},
-                    {x: 782, y: 1004},
-                    {x: 746, y: 1020},
-                    {x: 684, y: 1020},
-                    {x: 650, y: 978},
-                    {x: 622, y: 922},
-                    {x: 596, y: 868},
-                    {x: 570, y: 812},
-                    {x: 542, y: 836},
-                    {x: 516, y: 892},
-                    {x: 490, y: 946},
-                    {x: 462, y: 1002},
-                    {x: 412, y: 1020},
-                    {x: 352, y: 1020},
-                    {x: 354, y: 980},
-                    {x: 380, y: 924},
-                    {x: 408, y: 870},
-                    {x: 434, y: 814},
-                    {x: 460, y: 760},
-                    {x: 484, y: 706},
-                    {x: 432, y: 672},
-                    {x: 390, y: 628},
-                    {x: 360, y: 574},
-                    {x: 350, y: 514},
-                    {x: 366, y: 456},
-                    {x: 406, y: 410},
-                    {x: 458, y: 376},
-                    {x: 510, y: 346},
-                    {x: 558, y: 308},
-                    {x: 596, y: 260}
-                ]
-            },
-            hard: {
-                title: "hard",
-                dots: []
-            }
+        const LETTERS_SIMPLE = {
+            A: [[1, 1, 1], [1, 1, 1], [1, 0, 1]],
+            B: [[1, 1, 1], [1, 1, 1], [1, 1, 1]],
+            C: [[1, 1, 1], [1, 0, 0], [1, 1, 1]],
+            D: [[1, 1, 0], [1, 0, 1], [1, 1, 0]],
+            E: [[1, 1, 1], [1, 1, 0], [1, 1, 1]],
+            F: [[1, 1, 1], [1, 1, 0], [1, 0, 0]],
+            G: [[1, 1, 1], [1, 0, 1], [1, 1, 1]],
+            H: [[1, 0, 1], [1, 1, 1], [1, 0, 1]],
+            I: [[1, 1, 1], [0, 1, 0], [1, 1, 1]],
+            J: [[1, 1, 1], [0, 0, 1], [1, 1, 1]],
+            K: [[1, 0, 1], [1, 1, 0], [1, 0, 1]],
+            L: [[1, 0, 0], [1, 0, 0], [1, 1, 1]],
+            M: [[1, 1, 1], [1, 1, 1], [1, 0, 1]],
+            N: [[1, 1, 1], [1, 0, 1], [1, 0, 1]],
+            O: [[1, 1, 1], [1, 0, 1], [1, 1, 1]],
+            P: [[1, 1, 1], [1, 1, 1], [1, 0, 0]],
+            Q: [[1, 1, 1], [1, 0, 1], [1, 1, 1]],
+            R: [[1, 1, 1], [1, 1, 0], [1, 0, 1]],
+            S: [[1, 1, 1], [0, 1, 0], [1, 1, 1]],
+            T: [[1, 1, 1], [0, 1, 0], [0, 1, 0]],
+            U: [[1, 0, 1], [1, 0, 1], [1, 1, 1]],
+            V: [[1, 0, 1], [1, 0, 1], [0, 1, 0]],
+            W: [[1, 0, 1], [1, 1, 1], [1, 1, 1]],
+            X: [[1, 0, 1], [0, 1, 0], [1, 0, 1]],
+            Y: [[1, 0, 1], [0, 1, 0], [0, 1, 0]],
+            Z: [[1, 1, 1], [0, 1, 0], [1, 1, 1]]
         };
 
-        // Initialize audio context for sound effects
-        function initAudio() {
+        const LETTERS = {
+            A: [[0, 1, 1, 1, 0], [1, 0, 0, 0, 1], [1, 0, 0, 0, 1], [1, 1, 1, 1, 1], [1, 0, 0, 0, 1], [1, 0, 0, 0, 1]],
+            B: [[1, 1, 1, 1, 1], [1, 0, 0, 0, 1], [1, 0, 0, 0, 1], [1, 1, 1, 1, 0], [1, 0, 0, 0, 1], [1, 1, 1, 1, 1]],
+            C: [[1, 1, 1, 1, 1], [1, 0, 0, 0, 1], [1, 0, 0, 0, 0], [1, 0, 0, 0, 0], [1, 0, 0, 0, 1], [1, 1, 1, 1, 1]],
+            D: [[1, 1, 1, 1, 0], [1, 0, 0, 0, 1], [1, 0, 0, 0, 1], [1, 0, 0, 0, 1], [1, 0, 0, 0, 1], [1, 1, 1, 1, 0]],
+            E: [[1, 1, 1, 1, 1], [1, 0, 0, 0, 0], [1, 0, 0, 0, 0], [1, 1, 1, 0, 0], [1, 0, 0, 0, 0], [1, 1, 1, 1, 1]],
+            F: [[1, 1, 1, 1, 1], [1, 0, 0, 0, 0], [1, 0, 0, 0, 0], [1, 1, 1, 1, 0], [1, 0, 0, 0, 0], [1, 0, 0, 0, 0]],
+            G: [[1, 1, 1, 1, 1], [1, 0, 0, 0, 1], [1, 0, 0, 0, 0], [1, 0, 1, 1, 1], [1, 0, 0, 0, 1], [1, 1, 1, 1, 1]],
+            H: [[1, 0, 0, 0, 1], [1, 0, 0, 0, 1], [1, 0, 0, 0, 1], [1, 1, 1, 1, 1], [1, 0, 0, 0, 1], [1, 0, 0, 0, 1]],
+            I: [[0, 1, 1, 1, 0], [0, 1, 1, 1, 0], [0, 0, 1, 0, 0], [0, 0, 1, 0, 0], [0, 1, 1, 1, 0], [0, 1, 1, 1, 0]],
+            J: [[0, 1, 1, 1, 0], [0, 1, 1, 1, 0], [0, 0, 0, 0, 1], [0, 0, 0, 0, 1], [1, 0, 0, 0, 1], [0, 1, 1, 1, 0]],
+            K: [[1, 0, 0, 0, 1], [1, 0, 0, 0, 1], [1, 0, 0, 1, 0], [1, 1, 1, 0, 0], [1, 0, 0, 1, 0], [1, 0, 0, 0, 1]],
+            L: [[1, 0, 0, 0, 0], [1, 0, 0, 0, 0], [1, 0, 0, 0, 0], [1, 0, 0, 0, 0], [1, 0, 0, 0, 0], [1, 1, 1, 1, 1]],
+            M: [[1, 1, 0, 1, 1], [1, 0, 1, 0, 1], [1, 0, 1, 0, 1], [1, 0, 0, 0, 1], [1, 0, 0, 0, 1], [1, 0, 0, 0, 1]],
+            N: [[1, 0, 0, 0, 1], [1, 1, 0, 0, 1], [1, 0, 1, 0, 1], [1, 0, 1, 0, 1], [1, 0, 0, 1, 1], [1, 0, 0, 0, 1]],
+            O: [[0, 1, 1, 1, 0], [1, 0, 0, 0, 1], [1, 0, 0, 0, 1], [1, 0, 0, 0, 1], [1, 0, 0, 0, 1], [0, 1, 1, 1, 0]],
+            P: [[1, 1, 1, 1, 1], [1, 0, 0, 0, 1], [1, 0, 0, 0, 1], [1, 1, 1, 1, 1], [1, 0, 0, 0, 0], [1, 0, 0, 0, 0]],
+            Q: [[0, 1, 1, 1, 0], [1, 0, 0, 0, 1], [1, 0, 0, 0, 1], [1, 0, 1, 0, 1], [1, 0, 0, 1, 0], [0, 1, 1, 0, 1]],
+            R: [[1, 1, 1, 1, 0], [1, 0, 0, 0, 1], [1, 0, 0, 0, 1], [1, 1, 1, 1, 0], [1, 0, 0, 0, 1], [1, 0, 0, 0, 1]],
+            S: [[1, 1, 1, 1, 1], [1, 0, 0, 0, 0], [1, 0, 0, 0, 0], [1, 1, 1, 1, 0], [0, 0, 0, 0, 1], [1, 1, 1, 1, 1]],
+            T: [[1, 1, 1, 1, 1], [0, 0, 1, 0, 0], [0, 0, 1, 0, 0], [0, 0, 1, 0, 0], [0, 0, 1, 0, 0], [0, 0, 1, 0, 0]],
+            U: [[1, 0, 0, 0, 1], [1, 0, 0, 0, 1], [1, 0, 0, 0, 1], [1, 0, 0, 0, 1], [1, 0, 0, 0, 1], [0, 1, 1, 1, 0]],
+            V: [[1, 0, 0, 0, 1], [1, 0, 0, 0, 1], [1, 0, 0, 0, 1], [1, 0, 0, 0, 1], [0, 1, 0, 1, 0], [0, 0, 1, 0, 0]],
+            W: [[1, 0, 0, 0, 1], [1, 0, 0, 0, 1], [1, 0, 0, 0, 1], [1, 0, 1, 0, 1], [1, 0, 1, 0, 1], [0, 1, 0, 1, 0]],
+            X: [[1, 0, 0, 0, 1], [0, 1, 0, 1, 0], [0, 0, 1, 0, 0], [0, 0, 1, 0, 0], [0, 1, 0, 1, 0], [1, 0, 0, 0, 1]],
+            Y: [[1, 0, 0, 0, 1], [0, 1, 0, 1, 0], [0, 0, 1, 0, 0], [0, 0, 1, 0, 0], [0, 0, 1, 0, 0], [0, 0, 1, 0, 0]],
+            Z: [[1, 1, 1, 1, 1], [0, 0, 0, 0, 1], [0, 0, 0, 1, 0], [0, 0, 1, 0, 0], [0, 1, 0, 0, 0], [1, 1, 1, 1, 1]]
+        };
+
+        const colorSchemes = [
+            { bg: '#0a476b', letter: '#e88bb8' },
+            { bg: '#00853e', letter: '#ffd500' },
+            { bg: '#b8c5b8', letter: '#0066cc' },
+            { bg: '#451719', letter: '#B7EA50' },
+            { bg: '#ff88dd', letter: '#ff6633' },
+            { bg: '#d4b830', letter: '#2d6b2d' },
+            { bg: '#58CCFE', letter: '#881E1E' }
+        ];
+
+        let grids = [];
+        let activeGridId = null;
+        let nextGridId = 0;
+        let dragState = null;
+        let resizeState = null;
+
+        const FPS = 12;
+        const FRAME_DURATION = 1000 / FPS;
+        let lastFrameTime = 0;
+
+        let colorDeck = [];
+        let colorIndex = 0;
+
+        let audioEnabled = true;
+        let audioContext = null;
+        let lastPlayTime = 0;
+        const minPlayInterval = 50;
+
+        function shuffleArray(array) {
+            const shuffled = [...array];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+        }
+
+        function initializeColorDeck() {
+            colorDeck = shuffleArray([...Array(colorSchemes.length).keys()]);
+            colorIndex = 0;
+        }
+
+        function getNextColorScheme() {
+            if (colorIndex >= colorDeck.length) {
+                initializeColorDeck();
+            }
+            return colorDeck[colorIndex++];
+        }
+
+        initializeColorDeck();
+
+        function initAudioContext() {
             if (!audioContext) {
                 audioContext = new (window.AudioContext || window.webkitAudioContext)();
             }
         }
 
-        // Play specific melodic sequence for final animation
-        // Inspired by Einaudi's "Experience" - clear narrative arc
-        function playFinalMelodyNote(index) {
-            initAudio();
+        function playHarpSound(frequency, withDelay = false) {
+            if (!audioEnabled || !audioContext) return;
 
-            const now = audioContext.currentTime;
-            const duration = 2.2;
+            const now = Date.now();
+            if (!withDelay && now - lastPlayTime < minPlayInterval) return;
+            lastPlayTime = now;
 
-            // Melody with emotional arc: peaceful beginning → building → climax → resolution
-            const melodySequence = [
-                // BEGINNING - Peaceful and simple (measures 1-4)
-                [220.00, 329.63, 440.00],    // Am: A3, E4, A4 - opening, tranquil
-                [220.00, 329.63, 440.00],    // Am - establishing peace
-                [174.61, 261.63, 349.23],    // F: F3, C4, F4 - gentle warmth
-                [196.00, 293.66, 392.00],    // G: G3, D4, G4 - subtle lift
+            const currentTime = audioContext.currentTime;
 
-                // DEVELOPMENT - Adding emotion (measures 5-8)
-                [220.00, 329.63, 440.00],    // Am - returning with feeling
-                [261.63, 392.00, 523.25],    // C: C4, G4, C5 - brightening
-                [293.66, 440.00, 587.33],    // Dm: D4, A4, D5 - deepening emotion
-                [329.63, 493.88, 659.25],    // Em: E4, B4, E5 - rising intensity
+            const delayNode = audioContext.createDelay();
+            const feedbackGain = audioContext.createGain();
+            const delayGain = audioContext.createGain();
 
-                // CLIMAX - Emotional peak (measures 9-12)
-                [349.23, 523.25, 698.46],    // F: F4, C5, F5 - powerful
-                [392.00, 587.33, 783.99],    // G: G4, D5, G5 - soaring
-                [440.00, 659.25, 880.00],    // Am: A4, E5, A5 - PEAK moment
-                [392.00, 587.33, 783.99],    // G - sustaining the emotion
+            delayNode.delayTime.value = 0.15;
+            feedbackGain.gain.value = 0.4;
+            delayGain.gain.value = 0.6;
 
-                // RESOLUTION - Gentle return home (measures 13-16)
-                [349.23, 523.25, 698.46],    // F - beginning descent
-                [261.63, 392.00, 523.25],    // C - calming down
-                [293.66, 440.00, 587.33],    // Dm - settling
-                [220.00, 329.63, 440.00],    // Am - peaceful resolution, home
+            delayNode.connect(feedbackGain);
+            feedbackGain.connect(delayNode);
+            delayNode.connect(delayGain);
+            delayGain.connect(audioContext.destination);
+
+            const frequencies = [
+                frequency,
+                frequency * 1.25,
+                frequency * 1.5
             ];
 
-            // Cycle through the melody sequence
-            const notes = melodySequence[index % melodySequence.length];
+            frequencies.forEach((freq, index) => {
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
 
-            // Dynamic volume based on position in arc (crescendo to climax, then diminuendo)
-            const arcPosition = index % melodySequence.length;
-            let dynamicMultiplier = 1.0;
-            if (arcPosition < 4) dynamicMultiplier = 0.7; // quiet beginning
-            else if (arcPosition < 8) dynamicMultiplier = 0.9; // building
-            else if (arcPosition < 12) dynamicMultiplier = 1.2; // climax (louder)
-            else dynamicMultiplier = 0.8; // resolution (gentle)
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                gainNode.connect(delayNode);
 
-            notes.forEach((frequency, noteIndex) => {
-                const harmonics = [1, 2, 3, 4];
-                const volumes = [1, 0.4, 0.25, 0.15];
+                oscillator.type = index === 0 ? 'sine' : 'triangle';
+                oscillator.frequency.setValueAtTime(freq, currentTime);
 
-                harmonics.forEach((harmonic, idx) => {
-                    const osc = audioContext.createOscillator();
-                    const gain = audioContext.createGain();
+                const volume = index === 0 ? 0.08 : 0.03;
 
-                    osc.type = 'sine';
-                    osc.frequency.value = frequency * harmonic;
+                gainNode.gain.setValueAtTime(0, currentTime);
+                gainNode.gain.linearRampToValueAtTime(volume, currentTime + 0.02);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, currentTime + 0.8);
 
-                    const volume = volumes[idx] * 0.028 * dynamicMultiplier;
-                    const noteDelay = noteIndex * 0.05;
-
-                    gain.gain.setValueAtTime(0, now + noteDelay);
-                    gain.gain.linearRampToValueAtTime(volume, now + noteDelay + 0.025);
-                    gain.gain.exponentialRampToValueAtTime(volume * 0.5, now + noteDelay + 0.25);
-                    gain.gain.exponentialRampToValueAtTime(0.001, now + noteDelay + duration);
-
-                    osc.connect(gain);
-                    gain.connect(audioContext.destination);
-
-                    osc.start(now + noteDelay);
-                    osc.stop(now + noteDelay + duration);
-                });
+                oscillator.start(currentTime);
+                oscillator.stop(currentTime + 0.8);
             });
         }
 
-        // Play mystical angelic harp sound
-        function playHarpSound() {
-            initAudio();
+        function calculateFrequency(width, height) {
+            const area = width * height;
+            const minArea = 100 * 100;
+            const maxArea = 800 * 800;
 
-            const now = audioContext.currentTime;
-            const duration = 2.0; // Longer for more ethereal, angelic sound
-
-            // Mystical and angelic chord voicings - softer, more open intervals
-            const angelicChords = [
-                [261.63, 293.66, 392.00], // Csus2: C4, D4, G4 - open and airy
-                [293.66, 392.00, 440.00], // Dsus4: D4, G4, A4 - suspended, dreamy
-                [329.63, 392.00, 493.88], // Em: E4, G4, B4 - contemplative
-                [220.00, 277.18, 329.63, 493.88], // Aadd9: A3, C#4, E4, B4 - shimmering
-                [349.23, 440.00, 523.25], // Fmaj: F4, A4, C5 - warm and gentle
-                [392.00, 440.00, 587.33], // Gsus2: G4, A4, D5 - floating
-                [220.00, 261.63, 329.63, 392.00], // Am7: A3, C4, E4, G4 - mystical
-                [293.66, 349.23, 440.00, 523.25], // Dm7: D4, F4, A4, C5 - introspective
-                [246.94, 293.66, 369.99], // Bsus2: B3, D4, F#4 - ethereal
-                [174.61, 220.00, 261.63], // Fsus2: F3, A3, C4 - deep and calm
-                [196.00, 246.94, 293.66, 392.00], // Gmaj7: G3, B3, D4, G4 - celestial
-                [164.81, 207.65, 261.63], // Esus2: E3, F#3, C4 - mysterious
-                [233.08, 293.66, 349.23], // Bbsus2: Bb3, D4, F4 - soft
-                [207.65, 261.63, 329.63], // Asus2: A3, C4, E4 - peaceful
-                [277.18, 349.23, 440.00], // C#sus2: C#4, F4, A4 - dreamy
+            const pentatonicScale = [
+                261.63, 293.66, 329.63, 392.00, 440.00,
+                523.25, 587.33, 659.25, 783.99
             ];
 
-            // Random selection for unpredictable, mystical feel
-            const randomIndex = Math.floor(Math.random() * angelicChords.length);
-            const notes = angelicChords[randomIndex];
+            const normalizedArea = Math.max(0, Math.min(1, (area - minArea) / (maxArea - minArea)));
+            const index = Math.floor((1 - normalizedArea) * (pentatonicScale.length - 1));
 
-            notes.forEach((frequency, noteIndex) => {
-                // Fewer harmonics for softer, more angelic tone
-                const harmonics = [1, 2, 3, 4];
-                const volumes = [1, 0.35, 0.2, 0.12];
-
-                harmonics.forEach((harmonic, index) => {
-                    const osc = audioContext.createOscillator();
-                    const gain = audioContext.createGain();
-
-                    osc.type = 'sine'; // Pure sine for softest, most angelic sound
-                    osc.frequency.value = frequency * harmonic;
-
-                    // Very soft volume for gentle, mystical atmosphere
-                    const volume = volumes[index] * 0.022;
-                    const noteDelay = noteIndex * 0.06; // Slower arpeggio for more ethereal feel
-
-                    gain.gain.setValueAtTime(0, now + noteDelay);
-                    gain.gain.linearRampToValueAtTime(volume, now + noteDelay + 0.02); // Gentler attack
-                    gain.gain.exponentialRampToValueAtTime(volume * 0.5, now + noteDelay + 0.2); // Softer decay
-                    gain.gain.exponentialRampToValueAtTime(0.001, now + noteDelay + duration);
-
-                    osc.connect(gain);
-                    gain.connect(audioContext.destination);
-
-                    osc.start(now + noteDelay);
-                    osc.stop(now + noteDelay + duration);
-                });
-            });
+            return pentatonicScale[index];
         }
 
-        function generateButterflyDots() {
-            // Butterfly with 60 dots, excellent spacing
-            const dots = [
-                // Body (vertical center line) - 6 dots
-                {x: 400, y: 200}, // 1 - head
-                {x: 400, y: 260}, // 2
-                {x: 400, y: 320}, // 3
-                {x: 400, y: 380}, // 4
-                {x: 400, y: 440}, // 5
-                {x: 400, y: 500}, // 6 - tail
+        function playFinalChord(width, height) {
+            if (!audioEnabled || !audioContext) return;
 
-                // Left upper wing (9 dots around wing)
-                {x: 360, y: 250}, // 7
-                {x: 310, y: 230}, // 8
-                {x: 260, y: 240}, // 9
-                {x: 220, y: 270}, // 10
-                {x: 200, y: 320}, // 11
-                {x: 220, y: 370}, // 12
-                {x: 270, y: 400}, // 13
-                {x: 320, y: 400}, // 14
-                {x: 360, y: 370}, // 15
+            const frequency = calculateFrequency(width, height);
 
-                // Right upper wing (9 dots, mirror)
-                {x: 440, y: 250}, // 16
-                {x: 490, y: 230}, // 17
-                {x: 540, y: 240}, // 18
-                {x: 580, y: 270}, // 19
-                {x: 600, y: 320}, // 20
-                {x: 580, y: 370}, // 21
-                {x: 530, y: 400}, // 22
-                {x: 480, y: 400}, // 23
-                {x: 440, y: 370}, // 24
-
-                // Decorative spots on left upper wing
-                {x: 280, y: 300}, // 25
-                {x: 310, y: 340}, // 26
-
-                // Decorative spots on right upper wing
-                {x: 520, y: 300}, // 27
-                {x: 490, y: 340}, // 28
-
-                // Left lower wing (10 dots)
-                {x: 360, y: 410}, // 29
-                {x: 330, y: 440}, // 30
-                {x: 300, y: 475}, // 31
-                {x: 280, y: 515}, // 32
-                {x: 275, y: 555}, // 33
-                {x: 300, y: 585}, // 34
-                {x: 340, y: 595}, // 35
-                {x: 375, y: 575}, // 36
-                {x: 390, y: 540}, // 37
-                {x: 385, y: 500}, // 38
-
-                // Right lower wing (10 dots, mirror)
-                {x: 440, y: 410}, // 39
-                {x: 470, y: 440}, // 40
-                {x: 500, y: 475}, // 41
-                {x: 520, y: 515}, // 42
-                {x: 525, y: 555}, // 43
-                {x: 500, y: 585}, // 44
-                {x: 460, y: 595}, // 45
-                {x: 425, y: 575}, // 46
-                {x: 410, y: 540}, // 47
-                {x: 415, y: 500}, // 48
-
-                // Decorative spots on left lower wing
-                {x: 320, y: 525}, // 49
-                {x: 350, y: 550}, // 50
-
-                // Decorative spots on right lower wing
-                {x: 480, y: 525}, // 51
-                {x: 450, y: 550}, // 52
-
-                // Left antenna
-                {x: 380, y: 180}, // 53
-                {x: 360, y: 150}, // 54
-                {x: 350, y: 120}, // 55
-
-                // Back to head
-                {x: 400, y: 200}, // 56
-
-                // Right antenna
-                {x: 420, y: 180}, // 57
-                {x: 440, y: 150}, // 58
-                {x: 450, y: 120}  // 59
-            ];
-            return dots;
+            setTimeout(() => playHarpSound(frequency, true), 0);
+            setTimeout(() => playHarpSound(frequency * 1.25, true), 100);
+            setTimeout(() => playHarpSound(frequency * 1.5, true), 200);
         }
 
-        function startGame(level) {
-            difficulty = level;
-            const levelData = levels[level];
+        function darkenColor(hex, percent = 0.3) {
+            hex = hex.replace('#', '');
 
-            // Switch screens
-            document.getElementById('menu-screen').style.display = 'none';
-            document.getElementById('game-screen').style.display = 'flex';
+            let r = parseInt(hex.substring(0, 2), 16);
+            let g = parseInt(hex.substring(2, 4), 16);
+            let b = parseInt(hex.substring(4, 6), 16);
 
-            // Set up game
-            document.getElementById('level-title').textContent = levelData.title;
-            currentDot = 1;
-            dots = levelData.dots;
-            totalDots = dots.length;
-            document.getElementById('total-dots').textContent = totalDots;
-            document.getElementById('current-number').textContent = currentDot;
+            r = Math.floor(r * (1 - percent));
+            g = Math.floor(g * (1 - percent));
+            b = Math.floor(b * (1 - percent));
 
-            // Clear and draw canvas
-            const svg = document.getElementById('game-canvas');
-            svg.innerHTML = '';
-            lines = [];
+            const rr = r.toString(16).padStart(2, '0');
+            const gg = g.toString(16).padStart(2, '0');
+            const bb = b.toString(16).padStart(2, '0');
 
-            // Add cat detail image (only for medium/cat level) - insert FIRST so dots are clickable
-            if (level === 'medium') {
-                const catImage = document.createElementNS('http://www.w3.org/2000/svg', 'image');
-                catImage.setAttribute('href', './assets/cat-outline.svg?v=3');
-                catImage.setAttribute('x', '-460');
-                catImage.setAttribute('y', '-411');
-                catImage.setAttribute('width', '2374');
-                catImage.setAttribute('height', '2157');
-                catImage.setAttribute('preserveAspectRatio', 'xMidYMid meet');
-                catImage.style.pointerEvents = 'none'; // Make image non-interactive
-                svg.insertBefore(catImage, svg.firstChild); // Insert at beginning so dots are on top
-            }
-
-            // Colors from the animation
-            const dotColors = ['#FFBC5F', '#7CD2E1', '#C1C325', '#FEB0D3', '#9C292B', '#4F2121'];
-
-            // Draw dots with numbers
-            dots.forEach((dot, index) => {
-                const dotNumber = index + 1;
-
-                // Pick a random color
-                const randomColor = dotColors[Math.floor(Math.random() * dotColors.length)];
-
-                // Create dot circle
-                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-                circle.setAttribute('cx', dot.x);
-                circle.setAttribute('cy', dot.y);
-                circle.setAttribute('r', '11');
-                circle.setAttribute('fill', randomColor);
-                circle.classList.add('dot');
-                circle.setAttribute('data-number', dotNumber);
-                svg.appendChild(circle);
-
-                // Create number label
-                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                text.setAttribute('x', dot.x);
-                text.setAttribute('y', dot.y - 10);
-                text.setAttribute('text-anchor', 'middle');
-                text.setAttribute('font-size', '11');
-                text.classList.add('dot-number');
-                text.textContent = dotNumber;
-                svg.appendChild(text);
-            });
-
-            // Add drawing event listeners
-            svg.addEventListener('mousedown', startDrawing);
-            svg.addEventListener('mousemove', draw);
-            svg.addEventListener('mouseup', stopDrawing);
-            svg.addEventListener('mouseleave', stopDrawing);
-
-            // Touch support for mobile
-            svg.addEventListener('touchstart', handleTouchStart);
-            svg.addEventListener('touchmove', handleTouchMove);
-            svg.addEventListener('touchend', stopDrawing);
+            return '#' + rr + gg + bb;
         }
 
-        function startDrawing(event) {
-            const target = event.target;
-
-            // If clicking on the current dot, connect it first
-            if (target.classList.contains('dot')) {
-                const dotNumber = parseInt(target.getAttribute('data-number'));
-                if (dotNumber === currentDot) {
-                    isDrawing = true;
-                    connectDot(target);
-                    return;
-                }
-            }
-
-            // Allow starting from anywhere on canvas if we have a last connected dot
-            if (lastConnectedDot && currentDot <= totalDots) {
-                isDrawing = true;
-            }
+        function calculateGridDimensions(width, height, cellSize) {
+            const cols = Math.max(3, Math.min(25, Math.round(width / cellSize)));
+            const rows = Math.max(3, Math.min(25, Math.round(height / cellSize)));
+            return { cols, rows };
         }
 
-        function draw(event) {
-            if (!isDrawing) return;
-
-            const svg = document.getElementById('game-canvas');
-
-            // Convert screen coordinates to SVG coordinates using SVG's built-in method
-            const pt = svg.createSVGPoint();
-            pt.x = event.clientX;
-            pt.y = event.clientY;
-            const svgP = pt.matrixTransform(svg.getScreenCTM().inverse());
-            const x = svgP.x;
-            const y = svgP.y;
-
-            // Add point to trail (only if moved enough to avoid too many points)
-            if (trailPoints.length === 0 ||
-                Math.abs(trailPoints[trailPoints.length - 1].x - x) > 10 ||
-                Math.abs(trailPoints[trailPoints.length - 1].y - y) > 10) {
-                trailPoints.push({x, y});
+        function scaleLetterToGrid(letter, targetCols, targetRows) {
+            if (targetCols <= 3 && targetRows <= 3) {
+                return LETTERS_SIMPLE[letter] || LETTERS_SIMPLE['A'];
             }
 
-            // Update or create current drawing trail
-            if (currentLine) {
-                // Update polyline with all trail points
-                const pointsString = trailPoints.map(p => `${p.x},${p.y}`).join(' ');
-                currentLine.setAttribute('points', pointsString);
-            } else if (lastConnectedDot) {
-                // Create temporary trail from last dot
-                trailPoints = [{x: lastConnectedDot.x, y: lastConnectedDot.y}, {x, y}];
-                currentLine = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
-                const pointsString = trailPoints.map(p => `${p.x},${p.y}`).join(' ');
-                currentLine.setAttribute('points', pointsString);
-                currentLine.classList.add('line');
-                currentLine.style.opacity = '0.5';
-                currentLine.style.fill = 'none';
-                svg.appendChild(currentLine);
-            }
+            const src = LETTERS[letter];
+            const srcRows = src.length;
+            const srcCols = src[0].length;
 
-            // Check if hovering over the next dot
-            const target = document.elementFromPoint(event.clientX, event.clientY);
-            if (target && target.classList.contains('dot')) {
-                const dotNumber = parseInt(target.getAttribute('data-number'));
-                if (dotNumber === currentDot) {
-                    connectDot(target);
-                }
-            }
-        }
+            let minRow = srcRows, maxRow = -1;
+            let minCol = srcCols, maxCol = -1;
 
-        function handleTouchStart(event) {
-            event.preventDefault();
-            const touch = event.touches[0];
-            const target = document.elementFromPoint(touch.clientX, touch.clientY);
-
-            // If touching the current dot, connect it first
-            if (target && target.classList.contains('dot')) {
-                const dotNumber = parseInt(target.getAttribute('data-number'));
-                if (dotNumber === currentDot) {
-                    isDrawing = true;
-                    connectDot(target);
-                    return;
-                }
-            }
-
-            // Allow starting from anywhere on canvas if we have a last connected dot
-            if (lastConnectedDot && currentDot <= totalDots) {
-                isDrawing = true;
-            }
-        }
-
-        function handleTouchMove(event) {
-            event.preventDefault();
-            if (!isDrawing) return;
-
-            const touch = event.touches[0];
-            const svg = document.getElementById('game-canvas');
-
-            // Convert screen coordinates to SVG coordinates using SVG's built-in method
-            const pt = svg.createSVGPoint();
-            pt.x = touch.clientX;
-            pt.y = touch.clientY;
-            const svgP = pt.matrixTransform(svg.getScreenCTM().inverse());
-            const x = svgP.x;
-            const y = svgP.y;
-
-            // Add point to trail
-            if (trailPoints.length === 0 ||
-                Math.abs(trailPoints[trailPoints.length - 1].x - x) > 10 ||
-                Math.abs(trailPoints[trailPoints.length - 1].y - y) > 10) {
-                trailPoints.push({x, y});
-            }
-
-            // Update or create current drawing trail
-            if (currentLine) {
-                const pointsString = trailPoints.map(p => `${p.x},${p.y}`).join(' ');
-                currentLine.setAttribute('points', pointsString);
-            } else if (lastConnectedDot) {
-                trailPoints = [{x: lastConnectedDot.x, y: lastConnectedDot.y}, {x, y}];
-                currentLine = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
-                const pointsString = trailPoints.map(p => `${p.x},${p.y}`).join(' ');
-                currentLine.setAttribute('points', pointsString);
-                currentLine.classList.add('line');
-                currentLine.style.opacity = '0.5';
-                currentLine.style.fill = 'none';
-                svg.appendChild(currentLine);
-            }
-
-            // Check if hovering over the next dot
-            const target = document.elementFromPoint(touch.clientX, touch.clientY);
-            if (target && target.classList.contains('dot')) {
-                const dotNumber = parseInt(target.getAttribute('data-number'));
-                if (dotNumber === currentDot) {
-                    connectDot(target);
-                }
-            }
-        }
-
-        function stopDrawing() {
-            isDrawing = false;
-            if (currentLine) {
-                currentLine.remove();
-                currentLine = null;
-            }
-            trailPoints = [];
-        }
-
-        function connectDot(dotElement) {
-            const dotNumber = parseInt(dotElement.getAttribute('data-number'));
-
-            // Play random mystical harp sound
-            playHarpSound();
-
-            // Mark dot as connected
-            dotElement.classList.add('connected');
-
-            // Draw permanent trail to this dot (if not the first dot)
-            if (currentDot > 1) {
-                const svg = document.getElementById('game-canvas');
-
-                // Get current and previous dot elements to extract colors
-                const currentDotElement = dotElement;
-                const previousDotElement = svg.querySelector(`.dot[data-number="${currentDot - 1}"]`);
-
-                const currentDotColor = currentDotElement.getAttribute('fill');
-                const previousDotColor = previousDotElement.getAttribute('fill');
-
-                // Get exact coordinates of both dots
-                const currentDotX = parseFloat(currentDotElement.getAttribute('cx'));
-                const currentDotY = parseFloat(currentDotElement.getAttribute('cy'));
-                const previousDotX = parseFloat(previousDotElement.getAttribute('cx'));
-                const previousDotY = parseFloat(previousDotElement.getAttribute('cy'));
-
-                // Remove temporary line if it exists
-                if (currentLine) {
-                    currentLine.remove();
-                    currentLine = null;
-                }
-
-                // Create unique gradient for this line
-                const gradientId = `gradient-${currentDot - 1}-${currentDot}`;
-                const gradient = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
-                gradient.setAttribute('id', gradientId);
-                gradient.setAttribute('x1', previousDotX);
-                gradient.setAttribute('y1', previousDotY);
-                gradient.setAttribute('x2', currentDotX);
-                gradient.setAttribute('y2', currentDotY);
-                gradient.setAttribute('gradientUnits', 'userSpaceOnUse');
-
-                const stop1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
-                stop1.setAttribute('offset', '0%');
-                stop1.setAttribute('stop-color', previousDotColor);
-
-                const stop2 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
-                stop2.setAttribute('offset', '100%');
-                stop2.setAttribute('stop-color', currentDotColor);
-
-                gradient.appendChild(stop1);
-                gradient.appendChild(stop2);
-                svg.appendChild(gradient);
-
-                // Create permanent straight line from previous dot to current dot
-                const permanentLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                permanentLine.setAttribute('x1', previousDotX);
-                permanentLine.setAttribute('y1', previousDotY);
-                permanentLine.setAttribute('x2', currentDotX);
-                permanentLine.setAttribute('y2', currentDotY);
-                permanentLine.classList.add('line');
-                permanentLine.setAttribute('stroke', `url(#${gradientId})`);
-                permanentLine.style.fill = 'none';
-                permanentLine.style.opacity = '1';
-                svg.insertBefore(permanentLine, svg.firstChild);
-                lines.push(permanentLine);
-
-                trailPoints = [];
-            }
-
-            // Update last connected dot position
-            lastConnectedDot = dots[currentDot - 1];
-
-            // Move to next dot
-            currentDot++;
-            document.getElementById('current-number').textContent = currentDot;
-
-            // Check if completed
-            if (currentDot > totalDots) {
-                stopDrawing();
-                completeGame();
-            }
-        }
-
-        function completeGame() {
-            const svg = document.getElementById('game-canvas');
-            const allDots = svg.querySelectorAll('.dot');
-            const allNumbers = svg.querySelectorAll('.dot-number');
-
-            // Animate dots with pulse effect one by one
-            let delay = 0;
-            allDots.forEach((dot, index) => {
-                setTimeout(() => {
-                    const originalRadius = parseFloat(dot.getAttribute('r'));
-
-                    // Play specific melody note from composed sequence
-                    playFinalMelodyNote(index);
-
-                    // Grow animation
-                    dot.style.transition = 'all 0.15s ease-out';
-                    dot.setAttribute('r', originalRadius * 1.6);
-
-                    // Shrink back to original
-                    setTimeout(() => {
-                        dot.style.transition = 'all 0.15s ease-in';
-                        dot.setAttribute('r', originalRadius);
-                    }, 150);
-
-                    // If this is the last dot, transition to final image
-                    if (index === allDots.length - 1) {
-                        setTimeout(() => {
-                            // Hide all dots and numbers
-                            allDots.forEach(d => d.style.opacity = '0');
-                            allNumbers.forEach(n => n.style.opacity = '0');
-
-                            // Hide lines with fade out
-                            lines.forEach(line => {
-                                line.style.transition = 'opacity 0.5s ease';
-                                line.style.opacity = '0';
-                            });
-
-                            // Hide the background cat outline image
-                            const bgImage = svg.querySelector('image');
-                            if (bgImage) {
-                                bgImage.style.transition = 'opacity 0.5s ease';
-                                bgImage.style.opacity = '0';
-                            }
-
-                            // Show final cat image with fade in
-                            setTimeout(() => {
-                                const finalImage = document.createElementNS('http://www.w3.org/2000/svg', 'image');
-                                finalImage.setAttribute('href', './assets/cat-outline-final.svg?v=2');
-                                finalImage.setAttribute('x', '-460');
-                                finalImage.setAttribute('y', '-451');
-                                finalImage.setAttribute('width', '2374');
-                                finalImage.setAttribute('height', '2157');
-                                finalImage.setAttribute('preserveAspectRatio', 'xMidYMid meet');
-                                finalImage.style.opacity = '0';
-                                finalImage.style.transition = 'opacity 1s ease';
-                                svg.appendChild(finalImage);
-
-                                // Trigger fade in
-                                setTimeout(() => {
-                                    finalImage.style.opacity = '1';
-                                }, 50);
-                            }, 500);
-                        }, 400);
+            for (let r = 0; r < srcRows; r++) {
+                for (let c = 0; c < srcCols; c++) {
+                    if (src[r][c] === 1) {
+                        minRow = Math.min(minRow, r);
+                        maxRow = Math.max(maxRow, r);
+                        minCol = Math.min(minCol, c);
+                        maxCol = Math.max(maxCol, c);
                     }
-                }, delay);
-                delay += 60; // 60ms delay between each dot for melodic flow
+                }
+            }
+
+            if (maxRow === -1) {
+                return Array(targetRows).fill(null).map(() => Array(targetCols).fill(0));
+            }
+
+            const effectiveRows = maxRow - minRow + 1;
+            const effectiveCols = maxCol - minCol + 1;
+            const result = [];
+
+            for (let r = 0; r < targetRows; r++) {
+                const row = [];
+                for (let c = 0; c < targetCols; c++) {
+                    const srcR = minRow + Math.round(r * (effectiveRows - 1) / Math.max(1, targetRows - 1));
+                    const srcC = minCol + Math.round(c * (effectiveCols - 1) / Math.max(1, targetCols - 1));
+                    row.push(src[srcR][srcC]);
+                }
+                result.push(row);
+            }
+            return result;
+        }
+
+        function createGrid(initialState = {}) {
+            const id = nextGridId++;
+
+            const colorScheme = initialState.colorScheme !== undefined
+                ? initialState.colorScheme
+                : getNextColorScheme();
+
+            const state = {
+                cols: initialState.cols || 5,
+                rows: initialState.rows || 6,
+                width: initialState.width || 400,
+                height: initialState.height || 400,
+                letter: initialState.letter || 'A',
+                showGridLines: initialState.showGridLines !== undefined ? initialState.showGridLines : true,
+                cellSize: initialState.cellSize || 50,
+                shape: initialState.shape || 'square',
+                shapeSize: initialState.shapeSize || 100,
+                manualOverride: initialState.manualOverride || false,
+                colorScheme: colorScheme
+            };
+
+            const container = document.createElement('div');
+            container.className = 'grid-container';
+            container.dataset.gridId = id;
+            container.dataset.colorScheme = colorScheme;
+
+            const left = initialState.left || (window.innerWidth / 2);
+            const top = initialState.top || (window.innerHeight / 2);
+            container.style.left = left + 'px';
+            container.style.top = top + 'px';
+            container.style.transform = 'translate(-50%, -50%)';
+            container.style.zIndex = 10 + id;
+
+            const gridElement = document.createElement('div');
+            gridElement.className = 'grid';
+            container.appendChild(gridElement);
+
+            const handles = ['tl', 'tr', 'bl', 'br', 't', 'b', 'l', 'r'];
+            handles.forEach(handle => {
+                const handleEl = document.createElement('div');
+                handleEl.className = `resize-handle handle-${handle}`;
+                handleEl.dataset.handle = handle;
+                container.appendChild(handleEl);
             });
+
+            document.body.appendChild(container);
+
+            const grid = { id, state, container, gridElement };
+            grids.push(grid);
+
+            renderGrid(id);
+            selectGrid(id);
+
+            return grid;
         }
 
-        function backToMenu() {
-            document.getElementById('game-screen').style.display = 'none';
-            document.getElementById('menu-screen').style.display = 'flex';
-            document.getElementById('completion-message').style.display = 'none';
-
-            // Reset drawing state
-            isDrawing = false;
-            currentLine = null;
-            lastConnectedDot = null;
+        function getGrid(id) {
+            return grids.find(g => g.id === id);
         }
 
-        // Parallax effect for level icons
-        document.addEventListener('mousemove', (e) => {
-            const icons = document.querySelectorAll('.level-icon');
-            const centerX = window.innerWidth / 2;
-            const centerY = window.innerHeight / 2;
+        function selectGrid(id) {
+            if (activeGridId !== null) {
+                const oldGrid = getGrid(activeGridId);
+                if (oldGrid) {
+                    oldGrid.container.classList.remove('active');
+                }
+            }
 
-            const deltaX = (e.clientX - centerX) / centerX;
-            const deltaY = (e.clientY - centerY) / centerY;
-
-            icons.forEach(icon => {
-                const moveX = deltaX * 10; // Adjust multiplier for stronger/weaker effect
-                const moveY = deltaY * 10;
-                icon.style.transform = `translate(calc(-50% + ${moveX}px), calc(-50% + ${moveY}px))`;
-            });
-        });
-
-        // Background animation for menu screen
-        const canvas = document.getElementById('background-canvas');
-        const ctx = canvas.getContext('2d');
-        let animationDots = [];
-        let animationRunning = false;
-        let connectionProgress = {};
-
-        function resizeCanvas() {
-            const dpr = window.devicePixelRatio || 1;
-
-            // Set the actual size in memory (scaled to account for extra pixel density)
-            canvas.width = window.innerWidth * dpr;
-            canvas.height = window.innerHeight * dpr;
-
-            // Set the display size (CSS pixels)
-            canvas.style.width = window.innerWidth + 'px';
-            canvas.style.height = window.innerHeight + 'px';
-
-            // Scale the context to account for devicePixelRatio
-            ctx.scale(dpr, dpr);
-        }
-
-        // Initialize animated dots
-        function initAnimatedDots() {
-            animationDots = [];
-            const numDots = 45;
-            const colors = ['#FFBC5F', '#7CD2E1', '#C1C325', '#FEB0D3', '#9C292B', '#4F2121'];
-
-            for (let i = 1; i <= numDots; i++) {
-                const radius = 15;
-                const margin = 30; // Extra margin to keep dots well inside
-                animationDots.push({
-                    number: i,
-                    x: Math.random() * (window.innerWidth + 800) - 200,
-                    y: margin + Math.random() * (window.innerHeight - margin * 2),
-                    speed: 0.8 + Math.random() * 1.2,
-                    radius: radius,
-                    color: colors[Math.floor(Math.random() * colors.length)],
-                    connected: false
-                });
+            activeGridId = id;
+            const grid = getGrid(id);
+            if (grid) {
+                grid.container.classList.add('active');
+                grid.container.style.zIndex = 100;
+                updateControlsFromGrid(grid);
             }
         }
 
-        // Draw animated background
-        function drawAnimatedBackground() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        function updateControlsFromGrid(grid) {
+            const { state } = grid;
 
-            // Move dots
-            animationDots.forEach(dot => {
-                dot.x -= dot.speed;
+            // Update letter input with grid's letter
+            const letterInput = document.getElementById('letterInput');
+            letterInput.value = state.letter || 'A';
 
-                // Reset dot when it goes off screen
-                if (dot.x < -50) {
-                    const margin = 30;
-                    dot.x = window.innerWidth + 50;
-                    dot.y = margin + Math.random() * (window.innerHeight - margin * 2);
-                    dot.connected = false;
+            document.querySelectorAll('.shape-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.shape === state.shape) {
+                    btn.classList.add('active');
                 }
             });
 
-            // Draw lines connecting consecutive numbers with longer sequences
-            ctx.lineWidth = 2;
-            ctx.globalAlpha = 0.6;
+            document.getElementById('shapeSizeSlider').value = state.shapeSize;
+            document.getElementById('colsSlider').value = state.cols;
+            document.getElementById('rowsSlider').value = state.rows;
+            document.getElementById('cellSizeSlider').value = state.cellSize;
+            document.getElementById('toggleGridBtn').textContent = state.showGridLines ? 'Hide grid lines' : 'Show grid lines';
+        }
 
-            for (let i = 0; i < animationDots.length - 1; i++) {
-                const startDot = animationDots[i];
+        function renderGrid(gridId, autoCalculate = false) {
+            const grid = getGrid(gridId);
+            if (!grid) return;
 
-                if (startDot.x < -50 || startDot.x > window.innerWidth + 50) continue;
+            const { state, gridElement, container } = grid;
+            const { width, height, letter, showGridLines, cellSize, shape, shapeSize, manualOverride, colorScheme } = state;
 
-                // Try to create sequences of 2-5 connected dots
-                const maxSequenceLength = Math.min(5, animationDots.length - i);
-                let sequenceLength = 1;
+            const colors = colorSchemes[colorScheme];
+            const darkerBg = darkenColor(colors.bg, 0.3);
 
-                // Check how many consecutive dots are close enough to connect
-                for (let j = 1; j < maxSequenceLength; j++) {
-                    const currentDot = animationDots[i + j - 1];
-                    const nextDot = animationDots[i + j];
+            container.style.backgroundColor = colors.bg;
+            container.style.borderColor = darkerBg;
+            gridElement.style.backgroundColor = colors.bg;
 
-                    const distance = Math.sqrt(
-                        Math.pow(nextDot.x - currentDot.x, 2) +
-                        Math.pow(nextDot.y - currentDot.y, 2)
-                    );
+            if (autoCalculate && !manualOverride) {
+                const { cols, rows } = calculateGridDimensions(width, height, cellSize);
+                state.cols = cols;
+                state.rows = rows;
 
-                    if (distance < 650) {
-                        sequenceLength = j + 1;
+                if (gridId === activeGridId) {
+                    document.getElementById('colsSlider').value = cols;
+                    document.getElementById('rowsSlider').value = rows;
+                }
+            }
+
+            const { cols, rows } = state;
+
+            gridElement.style.width = width + 'px';
+            gridElement.style.height = height + 'px';
+            gridElement.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+            gridElement.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
+
+            const letterData = scaleLetterToGrid(letter, cols, rows);
+            gridElement.innerHTML = '';
+
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+
+                    if (!showGridLines) {
+                        cell.classList.add('no-lines');
                     } else {
-                        break;
+                        cell.style.borderColor = darkerBg;
                     }
-                }
 
-                const connectionKey = `${i}-${sequenceLength}`;
+                    const isFilled = letterData[r] && letterData[r][c] === 1;
 
-                // Draw the sequence if it has at least 2 dots
-                if (sequenceLength >= 2) {
-                    // Initialize or update connection progress
-                    if (!connectionProgress[connectionKey]) {
-                        connectionProgress[connectionKey] = 0;
-                    }
-                    connectionProgress[connectionKey] = Math.min(1, connectionProgress[connectionKey] + 0.05);
+                    if (isFilled) {
+                        if (shape === 'circle') {
+                            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                            svg.setAttribute('viewBox', '0 0 100 100');
+                            svg.setAttribute('preserveAspectRatio', 'none');
 
-                    // Use a gradient of colors from the dots in the sequence
-                    const gradient = ctx.createLinearGradient(
-                        animationDots[i].x,
-                        animationDots[i].y,
-                        animationDots[i + sequenceLength - 1].x,
-                        animationDots[i + sequenceLength - 1].y
-                    );
-                    gradient.addColorStop(0, animationDots[i].color);
-                    gradient.addColorStop(1, animationDots[i + sequenceLength - 1].color);
-                    ctx.strokeStyle = gradient;
+                            const radius = shapeSize / 2;
 
-                    ctx.beginPath();
-                    ctx.moveTo(animationDots[i].x, animationDots[i].y);
+                            const ellipse = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
+                            ellipse.setAttribute('cx', '50');
+                            ellipse.setAttribute('cy', '50');
+                            ellipse.setAttribute('rx', radius);
+                            ellipse.setAttribute('ry', radius);
+                            ellipse.setAttribute('fill', colors.letter);
 
-                    // Draw organic curves between points
-                    for (let j = 1; j < sequenceLength; j++) {
-                        const progress = connectionProgress[connectionKey];
-                        const segmentProgress = Math.max(0, Math.min(1, (progress * sequenceLength) - j + 1));
+                            svg.appendChild(ellipse);
+                            cell.appendChild(svg);
+                        } else if (shape === 'triangle') {
+                            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                            svg.setAttribute('viewBox', '0 0 100 100');
+                            svg.setAttribute('preserveAspectRatio', 'none');
 
-                        if (segmentProgress > 0) {
-                            const currentDot = animationDots[i + j - 1];
-                            const nextDot = animationDots[i + j];
+                            const offset = (100 - shapeSize) / 2;
+                            const top = offset;
+                            const bottom = 100 - offset;
+                            const left = offset;
+                            const right = 100 - offset;
 
-                            // Calculate control point for organic curve
-                            const midX = (currentDot.x + nextDot.x) / 2;
-                            const midY = (currentDot.y + nextDot.y) / 2;
+                            const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+                            polygon.setAttribute('points', `50,${top} ${right},${bottom} ${left},${bottom}`);
+                            polygon.setAttribute('fill', colors.letter);
 
-                            // Add slight curve offset perpendicular to the line
-                            const dx = nextDot.x - currentDot.x;
-                            const dy = nextDot.y - currentDot.y;
-                            const dist = Math.sqrt(dx * dx + dy * dy);
-                            const curveFactor = dist * 0.1; // Curve intensity
+                            svg.appendChild(polygon);
+                            cell.appendChild(svg);
+                        } else if (shape === 'square') {
+                            if (shapeSize < 100) {
+                                const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                                svg.setAttribute('viewBox', '0 0 100 100');
+                                svg.setAttribute('preserveAspectRatio', 'none');
 
-                            // Use dot numbers to create consistent but varied curves
-                            const curveVariation = Math.sin(currentDot.number * 0.5) * 0.7 + 0.3;
+                                const offset = (100 - shapeSize) / 2;
+                                const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                                rect.setAttribute('x', offset);
+                                rect.setAttribute('y', offset);
+                                rect.setAttribute('width', shapeSize);
+                                rect.setAttribute('height', shapeSize);
+                                rect.setAttribute('fill', colors.letter);
 
-                            const controlX = midX + (-dy / dist) * curveFactor * curveVariation;
-                            const controlY = midY + (dx / dist) * curveFactor * curveVariation;
-
-                            // Interpolate to show progressive drawing
-                            const targetX = currentDot.x + (nextDot.x - currentDot.x) * segmentProgress;
-                            const targetY = currentDot.y + (nextDot.y - currentDot.y) * segmentProgress;
-                            const targetCtrlX = currentDot.x + (controlX - currentDot.x) * segmentProgress;
-                            const targetCtrlY = currentDot.y + (controlY - currentDot.y) * segmentProgress;
-
-                            ctx.quadraticCurveTo(targetCtrlX, targetCtrlY, targetX, targetY);
+                                svg.appendChild(rect);
+                                cell.appendChild(svg);
+                            } else {
+                                cell.style.backgroundColor = colors.letter;
+                            }
                         }
                     }
 
-                    ctx.stroke();
-                } else {
-                    // Gradually fade out disconnected sequences
-                    if (connectionProgress[connectionKey] && connectionProgress[connectionKey] > 0) {
-                        connectionProgress[connectionKey] = Math.max(0, connectionProgress[connectionKey] - 0.05);
-
-                        // Draw the fading connection
-                        const gradient = ctx.createLinearGradient(
-                            animationDots[i].x,
-                            animationDots[i].y,
-                            animationDots[Math.min(i + 1, animationDots.length - 1)].x,
-                            animationDots[Math.min(i + 1, animationDots.length - 1)].y
-                        );
-                        gradient.addColorStop(0, animationDots[i].color);
-                        gradient.addColorStop(1, animationDots[Math.min(i + 1, animationDots.length - 1)].color);
-                        ctx.strokeStyle = gradient;
-
-                        ctx.globalAlpha = 0.6 * connectionProgress[connectionKey];
-
-                        ctx.beginPath();
-                        ctx.moveTo(animationDots[i].x, animationDots[i].y);
-
-                        const nextDot = animationDots[Math.min(i + 1, animationDots.length - 1)];
-                        const currentDot = animationDots[i];
-
-                        const midX = (currentDot.x + nextDot.x) / 2;
-                        const midY = (currentDot.y + nextDot.y) / 2;
-                        const dx = nextDot.x - currentDot.x;
-                        const dy = nextDot.y - currentDot.y;
-                        const dist = Math.sqrt(dx * dx + dy * dy);
-                        const curveFactor = dist * 0.1;
-                        const curveVariation = Math.sin(currentDot.number * 0.5) * 0.7 + 0.3;
-                        const controlX = midX + (-dy / dist) * curveFactor * curveVariation;
-                        const controlY = midY + (dx / dist) * curveFactor * curveVariation;
-
-                        const progress = connectionProgress[connectionKey];
-                        const targetX = currentDot.x + (nextDot.x - currentDot.x) * progress;
-                        const targetY = currentDot.y + (nextDot.y - currentDot.y) * progress;
-                        const targetCtrlX = currentDot.x + (controlX - currentDot.x) * progress;
-                        const targetCtrlY = currentDot.y + (controlY - currentDot.y) * progress;
-
-                        ctx.quadraticCurveTo(targetCtrlX, targetCtrlY, targetX, targetY);
-                        ctx.stroke();
-
-                        ctx.globalAlpha = 0.6;
-
-                        // Clean up when fully faded
-                        if (connectionProgress[connectionKey] <= 0) {
-                            delete connectionProgress[connectionKey];
-                        }
-                    }
+                    gridElement.appendChild(cell);
                 }
             }
 
-            // Draw dots
-            ctx.globalAlpha = 1.0;
-            animationDots.forEach(dot => {
-                if (dot.x < window.innerWidth + 50 && dot.x > -50) {
-                    // Draw circle with its unique color
-                    ctx.fillStyle = dot.color;
-                    ctx.beginPath();
-                    ctx.arc(dot.x, dot.y, dot.radius, 0, Math.PI * 2);
-                    ctx.fill();
+            const handles = container.querySelectorAll('.resize-handle');
+            handles.forEach(handle => {
+                handle.style.backgroundColor = darkerBg;
+            });
+        }
 
-                    // Draw number
-                    ctx.fillStyle = '#2D461F';
-                    ctx.font = '14px "DM Sans", sans-serif';
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'middle';
-                    ctx.fillText(dot.number, dot.x + 23, dot.y);
+        // Event listeners
+        const letterInput = document.getElementById('letterInput');
+
+        letterInput.addEventListener('keydown', (e) => {
+            // Only allow A-Z keys, Backspace, Delete, Tab, Arrow keys
+            const allowedKeys = ['Backspace', 'Delete', 'Tab', 'ArrowLeft', 'ArrowRight', 'Home', 'End'];
+            const isLetter = /^[a-zA-Z]$/.test(e.key);
+
+            if (!isLetter && !allowedKeys.includes(e.key)) {
+                e.preventDefault();
+            }
+        });
+
+        letterInput.addEventListener('input', (e) => {
+            // Only allow A-Z uppercase letters
+            let value = e.target.value.toUpperCase().replace(/[^A-Z]/g, '');
+
+            // If user is typing a new letter (not backspacing), replace completely
+            if (value.length > 1) {
+                value = value.slice(-1);
+            }
+
+            e.target.value = value;
+
+            // Only update active grid if there's a value
+            if (activeGridId !== null && value) {
+                const grid = getGrid(activeGridId);
+                grid.state.letter = value;
+                renderGrid(activeGridId);
+            }
+        });
+
+        document.querySelectorAll('.shape-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (activeGridId === null) return;
+                const grid = getGrid(activeGridId);
+                const shape = btn.dataset.shape;
+
+                document.querySelectorAll('.shape-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                grid.state.shape = shape;
+                renderGrid(activeGridId, false);
+            });
+        });
+
+        document.getElementById('shapeSizeSlider').addEventListener('input', (e) => {
+            if (activeGridId === null) return;
+            const grid = getGrid(activeGridId);
+            grid.state.shapeSize = parseInt(e.target.value);
+            renderGrid(activeGridId, false);
+        });
+
+        document.getElementById('colsSlider').addEventListener('input', (e) => {
+            if (activeGridId === null) return;
+            const grid = getGrid(activeGridId);
+            grid.state.cols = parseInt(e.target.value);
+            grid.state.manualOverride = true;
+            renderGrid(activeGridId, false);
+        });
+
+        document.getElementById('rowsSlider').addEventListener('input', (e) => {
+            if (activeGridId === null) return;
+            const grid = getGrid(activeGridId);
+            grid.state.rows = parseInt(e.target.value);
+            grid.state.manualOverride = true;
+            renderGrid(activeGridId, false);
+        });
+
+        document.getElementById('cellSizeSlider').addEventListener('input', (e) => {
+            if (activeGridId === null) return;
+            const grid = getGrid(activeGridId);
+            grid.state.cellSize = parseInt(e.target.value);
+            grid.state.manualOverride = false;
+            renderGrid(activeGridId, true);
+        });
+
+        document.getElementById('toggleGridBtn').addEventListener('click', () => {
+            if (activeGridId === null) return;
+            const grid = getGrid(activeGridId);
+            grid.state.showGridLines = !grid.state.showGridLines;
+            document.getElementById('toggleGridBtn').textContent = grid.state.showGridLines ? 'Hide grid lines' : 'Show grid lines';
+            renderGrid(activeGridId, false);
+        });
+
+        let handlesVisible = true;
+        document.getElementById('hideBoxBtn').addEventListener('click', () => {
+            handlesVisible = !handlesVisible;
+            const hideBoxBtn = document.getElementById('hideBoxBtn');
+
+            // Toggle all resize handles
+            document.querySelectorAll('.resize-handle').forEach(handle => {
+                if (handlesVisible) {
+                    handle.classList.remove('hidden');
+                } else {
+                    handle.classList.add('hidden');
                 }
             });
 
-            if (animationRunning) {
-                requestAnimationFrame(drawAnimatedBackground);
-            }
-        }
-
-        // Start/stop animation based on which screen is visible
-        function startBackgroundAnimation() {
-            if (!animationRunning) {
-                animationRunning = true;
-                resizeCanvas();
-                initAnimatedDots();
-                drawAnimatedBackground();
-            }
-        }
-
-        function stopBackgroundAnimation() {
-            animationRunning = false;
-        }
-
-        // Initialize on load
-        window.addEventListener('load', () => {
-            resizeCanvas();
-            startBackgroundAnimation();
+            hideBoxBtn.textContent = handlesVisible ? 'Hide box' : 'Show box';
         });
 
-        window.addEventListener('resize', () => {
-            if (animationRunning) {
-                resizeCanvas();
+        document.getElementById('addBtn').addEventListener('click', () => {
+            const offset = grids.length * 30;
+            let currentLetter = document.getElementById('letterInput').value.trim().toUpperCase();
+
+            // If input is empty, use 'A' as default and set it
+            if (!currentLetter) {
+                currentLetter = 'A';
+                document.getElementById('letterInput').value = 'A';
+            }
+
+            // Get current shape
+            const activeShape = document.querySelector('.shape-btn.active');
+            const currentShape = activeShape ? activeShape.dataset.shape : 'square';
+
+            createGrid({
+                left: window.innerWidth / 2 + offset,
+                top: window.innerHeight / 2 + offset,
+                letter: currentLetter,
+                shape: currentShape
+            });
+        });
+
+        document.getElementById('audioBtn').addEventListener('click', (e) => {
+            audioEnabled = !audioEnabled;
+
+            const btn = e.currentTarget;
+            if (audioEnabled) {
+                btn.classList.add('active');
+                initAudioContext();
+            } else {
+                btn.classList.remove('active');
             }
         });
 
-        // Override startGame to stop animation
-        const originalStartGame = startGame;
-        startGame = function(level) {
-            stopBackgroundAnimation();
-            originalStartGame(level);
-        };
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            if (activeGridId === null) return;
+            const grid = getGrid(activeGridId);
 
-        // Override backToMenu to restart animation
-        const originalBackToMenu = backToMenu;
-        backToMenu = function() {
-            originalBackToMenu();
-            startBackgroundAnimation();
-        };
+            grid.state.cols = 5;
+            grid.state.rows = 6;
+            grid.state.width = 400;
+            grid.state.height = 400;
+            grid.state.showGridLines = true;
+            grid.state.cellSize = 50;
+            grid.state.shape = 'square';
+            grid.state.shapeSize = 100;
+            grid.state.manualOverride = false;
+
+            grid.container.style.left = '50%';
+            grid.container.style.top = '50%';
+            grid.container.style.transform = 'translate(-50%, -50%)';
+
+            updateControlsFromGrid(grid);
+            renderGrid(activeGridId, true);
+        });
+
+        document.getElementById('downloadBtn').addEventListener('click', () => {
+            if (grids.length === 0) return;
+
+            // Find bounds of all grids
+            let minX = Infinity, minY = Infinity;
+            let maxX = -Infinity, maxY = -Infinity;
+
+            grids.forEach(grid => {
+                const rect = grid.container.getBoundingClientRect();
+                minX = Math.min(minX, rect.left);
+                minY = Math.min(minY, rect.top);
+                maxX = Math.max(maxX, rect.right);
+                maxY = Math.max(maxY, rect.bottom);
+            });
+
+            const width = maxX - minX;
+            const height = maxY - minY;
+
+            // Create canvas
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+
+            // Fill background
+            ctx.fillStyle = '#f5f5f0';
+            ctx.fillRect(0, 0, width, height);
+
+            // Draw each grid
+            grids.forEach(grid => {
+                const rect = grid.container.getBoundingClientRect();
+                const x = rect.left - minX;
+                const y = rect.top - minY;
+
+                const { state } = grid;
+                const colors = colorSchemes[state.colorScheme];
+
+                // Draw grid background
+                ctx.fillStyle = colors.bg;
+                ctx.fillRect(x, y, rect.width, rect.height);
+
+                // Draw grid content
+                const cellWidth = state.width / state.cols;
+                const cellHeight = state.height / state.rows;
+                const letterData = scaleLetterToGrid(state.letter, state.cols, state.rows);
+
+                for (let r = 0; r < state.rows; r++) {
+                    for (let c = 0; c < state.cols; c++) {
+                        const isFilled = letterData[r] && letterData[r][c] === 1;
+                        if (isFilled) {
+                            const cellX = x + 20 + (c * cellWidth);
+                            const cellY = y + 20 + (r * cellHeight);
+
+                            if (state.shape === 'square') {
+                                const offset = cellWidth * (100 - state.shapeSize) / 200;
+                                const size = cellWidth * state.shapeSize / 100;
+                                ctx.fillStyle = colors.letter;
+                                ctx.fillRect(cellX + offset, cellY + offset, size, size);
+                            } else if (state.shape === 'circle') {
+                                const centerX = cellX + cellWidth / 2;
+                                const centerY = cellY + cellHeight / 2;
+                                const radius = Math.min(cellWidth, cellHeight) * state.shapeSize / 200;
+                                ctx.fillStyle = colors.letter;
+                                ctx.beginPath();
+                                ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+                                ctx.fill();
+                            } else if (state.shape === 'triangle') {
+                                const offset = cellWidth * (100 - state.shapeSize) / 200;
+                                const size = cellWidth * state.shapeSize / 100;
+                                const centerX = cellX + cellWidth / 2;
+                                const top = cellY + offset;
+                                const bottom = cellY + offset + size;
+                                const left = centerX - size / 2;
+                                const right = centerX + size / 2;
+
+                                ctx.fillStyle = colors.letter;
+                                ctx.beginPath();
+                                ctx.moveTo(centerX, top);
+                                ctx.lineTo(right, bottom);
+                                ctx.lineTo(left, bottom);
+                                ctx.closePath();
+                                ctx.fill();
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Download
+            const link = document.createElement('a');
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+            link.download = `letter-grid-${timestamp}.png`;
+            link.href = canvas.toDataURL();
+            link.click();
+        });
+
+        document.addEventListener('mousedown', (e) => {
+            const clickedOnGrid = e.target.closest('.grid-container');
+            const clickedOnControls = e.target.closest('.controls');
+            const clickedOnButton = e.target.closest('.add-btn, .reset-btn, .audio-btn, .download-btn');
+            const clickedOnMenuHandle = e.target.closest('.menu-resize-handle');
+
+            // Don't interfere with menu handle
+            if (clickedOnMenuHandle) {
+                return;
+            }
+
+            if (!clickedOnGrid && !clickedOnControls && !clickedOnButton) {
+                if (activeGridId !== null) {
+                    const oldGrid = getGrid(activeGridId);
+                    if (oldGrid) {
+                        oldGrid.container.classList.remove('active');
+                        oldGrid.container.style.zIndex = 10 + oldGrid.id;
+                    }
+                    activeGridId = null;
+                }
+                return;
+            }
+
+            const container = e.target.closest('.grid-container');
+            if (!container) return;
+
+            const gridId = parseInt(container.dataset.gridId);
+            const grid = getGrid(gridId);
+            if (!grid) return;
+
+            selectGrid(gridId);
+
+            if (e.target.classList.contains('resize-handle')) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                resizeState = {
+                    gridId,
+                    handle: e.target.dataset.handle,
+                    startMouse: { x: e.clientX, y: e.clientY },
+                    startSize: { width: grid.state.width, height: grid.state.height },
+                    startRect: container.getBoundingClientRect()
+                };
+                container.classList.add('resizing');
+                return;
+            }
+
+            e.preventDefault();
+            dragState = {
+                gridId,
+                startMouse: { x: e.clientX, y: e.clientY },
+                startRect: container.getBoundingClientRect()
+            };
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            const currentTime = Date.now();
+
+            if (currentTime - lastFrameTime < FRAME_DURATION) {
+                return;
+            }
+            lastFrameTime = currentTime;
+
+            if (dragState) {
+                e.preventDefault();
+                const grid = getGrid(dragState.gridId);
+                if (!grid) return;
+
+                const dx = e.clientX - dragState.startMouse.x;
+                const dy = e.clientY - dragState.startMouse.y;
+
+                const newLeft = dragState.startRect.left + dx;
+                const newTop = dragState.startRect.top + dy;
+
+                grid.container.style.left = newLeft + 'px';
+                grid.container.style.top = newTop + 'px';
+                grid.container.style.transform = 'none';
+            }
+
+            if (resizeState) {
+                e.preventDefault();
+                const grid = getGrid(resizeState.gridId);
+                if (!grid) return;
+
+                const dx = e.clientX - resizeState.startMouse.x;
+                const dy = e.clientY - resizeState.startMouse.y;
+
+                let newWidth = resizeState.startSize.width;
+                let newHeight = resizeState.startSize.height;
+                let offsetX = 0;
+                let offsetY = 0;
+
+                switch (resizeState.handle) {
+                    case 'br':
+                        newWidth = Math.max(100, resizeState.startSize.width + dx);
+                        newHeight = Math.max(100, resizeState.startSize.height + dy);
+                        break;
+                    case 'tl':
+                        newWidth = Math.max(100, resizeState.startSize.width - dx);
+                        newHeight = Math.max(100, resizeState.startSize.height - dy);
+                        offsetX = resizeState.startSize.width - newWidth;
+                        offsetY = resizeState.startSize.height - newHeight;
+                        break;
+                    case 'tr':
+                        newWidth = Math.max(100, resizeState.startSize.width + dx);
+                        newHeight = Math.max(100, resizeState.startSize.height - dy);
+                        offsetY = resizeState.startSize.height - newHeight;
+                        break;
+                    case 'bl':
+                        newWidth = Math.max(100, resizeState.startSize.width - dx);
+                        newHeight = Math.max(100, resizeState.startSize.height + dy);
+                        offsetX = resizeState.startSize.width - newWidth;
+                        break;
+                    case 'r':
+                        newWidth = Math.max(100, resizeState.startSize.width + dx);
+                        break;
+                    case 'l':
+                        newWidth = Math.max(100, resizeState.startSize.width - dx);
+                        offsetX = resizeState.startSize.width - newWidth;
+                        break;
+                    case 'b':
+                        newHeight = Math.max(100, resizeState.startSize.height + dy);
+                        break;
+                    case 't':
+                        newHeight = Math.max(100, resizeState.startSize.height - dy);
+                        offsetY = resizeState.startSize.height - newHeight;
+                        break;
+                }
+
+                if (offsetX !== 0 || offsetY !== 0) {
+                    const newLeft = resizeState.startRect.left + offsetX;
+                    const newTop = resizeState.startRect.top + offsetY;
+                    grid.container.style.left = newLeft + 'px';
+                    grid.container.style.top = newTop + 'px';
+                    grid.container.style.transform = 'none';
+                }
+
+                grid.state.width = newWidth;
+                grid.state.height = newHeight;
+                renderGrid(resizeState.gridId, true);
+
+                const frequency = calculateFrequency(newWidth, newHeight);
+                playHarpSound(frequency);
+            }
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (resizeState) {
+                const grid = getGrid(resizeState.gridId);
+                if (grid) {
+                    grid.container.classList.remove('resizing');
+                    playFinalChord(grid.state.width, grid.state.height);
+                }
+            }
+            dragState = null;
+            resizeState = null;
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if ((e.key === 'Delete' || e.key === 'Backspace') && activeGridId !== null) {
+                // Check if we're not typing in the letter input
+                const letterInput = document.getElementById('letterInput');
+                if (document.activeElement === letterInput) {
+                    return; // Let the input handle the key
+                }
+
+                e.preventDefault();
+                const grid = getGrid(activeGridId);
+                if (grid) {
+                    grid.container.remove();
+                    grids = grids.filter(g => g.id !== activeGridId);
+                    activeGridId = null;
+                }
+            }
+        });
+
+        document.addEventListener('click', () => {
+            initAudioContext();
+        }, { once: true });
+
+        // Create initial grid
+        createGrid();
+
+        // Menu collapse/expand functionality
+        const menuResizeHandle = document.getElementById('menuResizeHandle');
+        const controlsPanel = document.querySelector('.controls');
+        const controlsContent = document.getElementById('controlsContent');
+        let menuExpanded = true;
+
+        // Set initial max-height
+        setTimeout(() => {
+            controlsContent.style.maxHeight = controlsContent.scrollHeight + 'px';
+        }, 0);
+
+        menuResizeHandle.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+
+            menuExpanded = !menuExpanded;
+
+            if (menuExpanded) {
+                controlsPanel.classList.remove('collapsed');
+                setTimeout(() => {
+                    controlsContent.style.maxHeight = controlsContent.scrollHeight + 'px';
+                }, 0);
+            } else {
+                controlsPanel.classList.add('collapsed');
+                controlsContent.style.maxHeight = '0';
+            }
+        });
     </script>
 </body>
 </html>
